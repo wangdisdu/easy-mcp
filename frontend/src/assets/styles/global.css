@@ -1,0 +1,88 @@
+/* Global styles for Easy MCP */
+
+/* Basic layout */
+.page-container {
+  padding: 16px;
+}
+
+/* Action bar for list views */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+/* Form container */
+.form-container {
+  max-width: 100%;
+}
+
+/* Editor container */
+.editor-container {
+  border: 1px solid #f0f0f0;
+  border-radius: 2px;
+  height: 400px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Tab description */
+.tab-description {
+  margin-bottom: 16px;
+}
+
+/* Detail view styles */
+.detail-label {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.detail-value {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* Info container styles */
+.info-container {
+  margin-bottom: 24px;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 16px;
+  line-height: 24px;
+}
+
+.info-label {
+  width: 120px;
+  text-align: right;
+  margin-right: 16px;
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 500;
+}
+
+.info-value {
+  flex: 1;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* Remove custom styles from version history */
+.version-history {
+  margin-top: 16px;
+}
+
+.version-item {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 2px;
+}
+
+/* Code display */
+.code-display {
+  max-height: 500px;
+  overflow: auto;
+  margin: 0;
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 2px;
+}
