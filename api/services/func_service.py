@@ -2,18 +2,19 @@
 Function service.
 """
 
-from typing import Optional, List, Tuple
+import logging
+from typing import List, Optional, Tuple
 
-from sqlalchemy import or_, desc
+from sqlalchemy import desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from api.errors.func_error import (
-    FuncNotFoundError,
+    CircularDependencyError,
     FuncAlreadyExistsError,
     FuncInUseError,
+    FuncNotFoundError,
     FuncVersionNotFoundError,
-    CircularDependencyError,
 )
 from api.models.tb_func import TbFunc, TbFuncDeploy, TbFuncDepends
 from api.models.tb_tool import TbTool, TbToolFunc
@@ -21,6 +22,9 @@ from api.schemas.func_schema import FuncCreate, FuncUpdate
 from api.schemas.usage_schema import FuncUsageResponse
 from api.utils.audit_util import audit
 from api.utils.time_util import get_current_unix_ms
+
+# Get logger
+logger = logging.getLogger(__name__)
 
 
 class FuncService:
@@ -124,11 +128,17 @@ class FuncService:
 
         # Check if func_id is in depend_ids
         if func_id in depend_ids:
+            logger.error(
+                f"Circular dependency detected: function {func_id} depends on itself"
+            )
             raise CircularDependencyError(func_id=func_id, dependency_path=path)
 
         # Check each dependency
         for depend_id in depend_ids:
             if depend_id in path:
+                logger.error(
+                    f"Circular dependency detected: function {func_id} has circular dependency path {path + [depend_id]}"
+                )
                 raise CircularDependencyError(
                     func_id=func_id, dependency_path=path + [depend_id]
                 )
@@ -168,6 +178,9 @@ class FuncService:
         # Check if function already exists
         existing_func = await self.get_func_by_name(func_data.name)
         if existing_func:
+            logger.warning(
+                f"Refuse to create function with existing name: {func_data.name}"
+            )
             raise FuncAlreadyExistsError(name=func_data.name)
 
         # Create function
@@ -229,12 +242,16 @@ class FuncService:
         # Get function
         func = await self.get_func_by_id(func_id)
         if not func:
+            logger.error(f"Function not found for update operation: {func_id}")
             raise FuncNotFoundError(func_id=func_id)
 
         # Check if name already exists
         if func_data.name != func.name:
             existing_func = await self.get_func_by_name(func_data.name)
             if existing_func:
+                logger.warning(
+                    f"Refuse to update function with existing name: {func_data.name}"
+                )
                 raise FuncAlreadyExistsError(name=func_data.name)
 
         # Update function
@@ -296,6 +313,7 @@ class FuncService:
         # Get function
         func = await self.get_func_by_id(func_id)
         if not func:
+            logger.error(f"Function not found for deploy operation: {func_id}")
             raise FuncNotFoundError(func_id=func_id)
 
         # Get next version
@@ -346,6 +364,7 @@ class FuncService:
         # Check if function exists
         func = await self.get_func_by_id(func_id)
         if not func:
+            logger.error(f"Function not found for deployment history query: {func_id}")
             raise FuncNotFoundError(func_id=func_id)
 
         # Query deployments
@@ -392,6 +411,7 @@ class FuncService:
         # Get function
         func = await self.get_func_by_id(func_id)
         if not func:
+            logger.error(f"Function not found for rollback operation: {func_id}")
             raise FuncNotFoundError(func_id=func_id)
 
         # Get deployment
@@ -403,6 +423,9 @@ class FuncService:
         deploy = result.scalars().first()
 
         if not deploy:
+            logger.error(
+                f"Function version not found for rollback operation: function {func_id}, version {version}"
+            )
             raise FuncVersionNotFoundError(func_id=func_id, version=version)
 
         # Update function
@@ -484,11 +507,21 @@ class FuncService:
         # Get function
         func = await self.get_func_by_id(func_id)
         if not func:
+            logger.error(f"Function not found for delete operation: {func_id}")
             raise FuncNotFoundError(func_id=func_id)
 
         # Check if function is in use
         is_in_use, tools_using, funcs_using = await self.check_func_in_use(func_id)
         if is_in_use:
+            tool_names = (
+                ", ".join([tool["name"] for tool in tools_using]) if tools_using else ""
+            )
+            func_names = (
+                ", ".join([func["name"] for func in funcs_using]) if funcs_using else ""
+            )
+            logger.warning(
+                f"Cannot delete function {func_id} because it is used by tools: {tool_names} and functions: {func_names}"
+            )
             raise FuncInUseError(
                 func_id=func_id, used_by_tools=tools_using, used_by_funcs=funcs_using
             )

@@ -15,8 +15,8 @@ class TbConfig(SQLModel, table=True):
         id: Configuration ID
         name: Configuration name
         description: Configuration description
-        schema: Configuration schema (JSON Schema)
-        values: Configuration values
+        conf_schema: Configuration schema (JSON Schema)
+        conf_value: Configuration values
         created_at: Creation time (UnixMS)
         updated_at: Update time (UnixMS)
         created_by: Creator username

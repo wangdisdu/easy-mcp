@@ -132,6 +132,9 @@ class ToolService:
         # Check if tool already exists
         existing_tool = await self.get_tool_by_name(tool_data.name)
         if existing_tool:
+            logger.warning(
+                f"Refuse to create tool with existing name: {tool_data.name}"
+            )
             raise ToolAlreadyExistsError(name=tool_data.name)
 
         # Create tool
@@ -204,12 +207,16 @@ class ToolService:
         # Get tool
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for update operation: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Check if name already exists
         if tool_data.name != tool.name:
             existing_tool = await self.get_tool_by_name(tool_data.name)
             if existing_tool:
+                logger.warning(
+                    f"Refuse to update tool with existing name: {tool_data.name}"
+                )
                 raise ToolAlreadyExistsError(name=tool_data.name)
 
         # Update tool
@@ -289,6 +296,7 @@ class ToolService:
         # Get tool
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for deploy operation: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Get next version
@@ -340,6 +348,7 @@ class ToolService:
         # Check if tool exists
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for deployment history query: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Query deployments
@@ -386,6 +395,7 @@ class ToolService:
         # Get tool
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for rollback operation: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Get deployment
@@ -397,6 +407,9 @@ class ToolService:
         deploy = result.scalars().first()
 
         if not deploy:
+            logger.error(
+                f"Tool version not found for rollback operation: tool {tool_id}, version {version}"
+            )
             raise ToolVersionNotFoundError(tool_id=tool_id, version=version)
 
         # Update tool
@@ -430,6 +443,7 @@ class ToolService:
         # Get tool
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for delete operation: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Delete related records in tb_tool_deploy
@@ -469,6 +483,7 @@ class ToolService:
         # Check if tool exists
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for function list query: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Get functions used by this tool
@@ -497,6 +512,7 @@ class ToolService:
         # Check if tool exists
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for config list query: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Get configurations used by this tool
@@ -529,6 +545,7 @@ class ToolService:
         # Get tool
         tool = await self.get_tool_by_id(tool_id)
         if not tool:
+            logger.error(f"Tool not found for execution: {tool_id}")
             raise ToolNotFoundError(tool_id=tool_id)
 
         # Get tool functions
@@ -593,6 +610,7 @@ result = None
         # Handle execution errors
         if error_message:
             logs.append(error_message)
+            logger.error(f"Tool execution error for tool {tool_id}: {error_message}")
             raise ToolExecutionError(tool_id=tool_id, error_message=error_message)
 
         # Get the result from the namespace

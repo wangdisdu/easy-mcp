@@ -2,7 +2,7 @@
 Tool router.
 """
 
-from typing import Optional, List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,16 +10,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.database import get_db
 from api.errors.tool_error import ToolExecutionError
 from api.models.tb_user import TbUser
-from api.schemas.common_schema import Response, PaginatedResponse
+from api.schemas.common_schema import PaginatedResponse, Response
 from api.schemas.config_schema import ConfigResponse
 from api.schemas.func_schema import FuncResponse
 from api.schemas.tool_schema import (
     ToolCreate,
-    ToolUpdate,
-    ToolResponse,
-    ToolDeployResponse,
     ToolDebugRequest,
     ToolDebugResponse,
+    ToolDeployResponse,
+    ToolResponse,
+    ToolUpdate,
 )
 from api.services.tool_service import ToolService
 from api.utils.security_util import get_current_user
@@ -330,8 +330,6 @@ async def get_tool_functions(
     service = ToolService(db)
     funcs = await service.get_tool_funcs(tool_id)
 
-    from api.schemas.func_schema import FuncResponse
-
     func_responses = [FuncResponse.model_validate(func) for func in funcs]
 
     return Response(data=func_responses)
@@ -356,8 +354,6 @@ async def get_tool_configs(
     """
     service = ToolService(db)
     configs = await service.get_tool_configs(tool_id)
-
-    from api.schemas.config_schema import ConfigResponse
 
     config_responses = [ConfigResponse.model_validate(config) for config in configs]
 

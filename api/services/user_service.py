@@ -2,18 +2,22 @@
 User service.
 """
 
-from typing import Optional, List, Tuple
+import logging
+from typing import List, Optional, Tuple
 
 from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from api.errors.user_error import UserNotFoundError, UserAlreadyExistsError
+from api.errors.user_error import UserAlreadyExistsError, UserNotFoundError
 from api.models.tb_user import TbUser
 from api.schemas.user_schema import UserCreate, UserUpdate
 from api.utils.audit_util import audit
 from api.utils.security_util import get_password_hash
 from api.utils.time_util import get_current_unix_ms
+
+# Get logger
+logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -116,6 +120,9 @@ class UserService:
         # Check if user already exists
         existing_user = await self.get_user_by_username(user_data.username)
         if existing_user:
+            logger.warning(
+                f"Refuse to create user with existing username: {user_data.username}"
+            )
             raise UserAlreadyExistsError(username=user_data.username)
 
         # Create user
@@ -157,6 +164,7 @@ class UserService:
         # Get user
         user = await self.get_user_by_id(user_id)
         if not user:
+            logger.error(f"User not found for update operation: {user_id}")
             raise UserNotFoundError(user_id=user_id)
 
         # Update user
@@ -194,6 +202,7 @@ class UserService:
         # Get user
         user = await self.get_user_by_id(user_id)
         if not user:
+            logger.error(f"User not found for delete operation: {user_id}")
             raise UserNotFoundError(user_id=user_id)
 
         # Delete user

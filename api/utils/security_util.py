@@ -3,7 +3,7 @@ Security utility functions.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -149,10 +149,3 @@ async def get_current_user(
         raise credentials_exception
 
     return user
-
-
-if __name__ == "__main__":
-    plain_password = "admin"
-    hashed_password = get_password_hash(plain_password)
-    check = verify_password(plain_password, hashed_password)
-    print(check)
