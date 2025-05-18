@@ -358,3 +358,47 @@ async def get_tool_configs(
     config_responses = [ConfigResponse.model_validate(config) for config in configs]
 
     return Response(data=config_responses)
+
+
+@router.patch("/{tool_id}/enable", response_model=Response[ToolResponse])
+async def enable_tool(
+    tool_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Enable tool.
+
+    Args:
+        tool_id: Tool ID
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[ToolResponse]: Response with updated tool
+    """
+    tool_service = ToolService(db)
+    tool = await tool_service.toggle_tool_state(tool_id, True, current_user.username)
+    return Response(data=ToolResponse.model_validate(tool))
+
+
+@router.patch("/{tool_id}/disable", response_model=Response[ToolResponse])
+async def disable_tool(
+    tool_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Disable tool.
+
+    Args:
+        tool_id: Tool ID
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[ToolResponse]: Response with updated tool
+    """
+    tool_service = ToolService(db)
+    tool = await tool_service.toggle_tool_state(tool_id, False, current_user.username)
+    return Response(data=ToolResponse.model_validate(tool))

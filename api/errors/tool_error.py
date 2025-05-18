@@ -171,3 +171,40 @@ class ToolExecutionError(ServiceError):
             code="TOOL_EXECUTION_ERROR",
             details=details,
         )
+
+
+class ToolStateChangeError(ServiceError):
+    """
+    Exception raised when changing a tool's state (enable/disable) fails.
+    """
+
+    def __init__(
+        self,
+        tool_id: int,
+        enable: bool,
+        error: str,
+        reason: Optional[str] = None,
+        description: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        if details is None:
+            details = {}
+
+        details["tool_id"] = tool_id
+        details["enable"] = enable
+        details["error"] = error
+
+        action = "启用" if enable else "禁用"
+
+        if reason is None:
+            reason = f"工具{action}失败"
+
+        if description is None:
+            description = f"工具{action}失败: {error}"
+
+        super().__init__(
+            reason=reason,
+            description=description,
+            code="TOOL_STATE_CHANGE_ERROR",
+            details=details,
+        )

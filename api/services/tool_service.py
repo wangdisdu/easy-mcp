@@ -18,6 +18,7 @@ from api.errors.tool_error import (
     ToolAlreadyExistsError,
     ToolVersionNotFoundError,
     ToolExecutionError,
+    ToolStateChangeError,
 )
 from api.models.tb_config import TbConfig
 from api.models.tb_func import TbFunc
@@ -422,6 +423,51 @@ class ToolService:
         await self.db.refresh(tool)
 
         return tool
+
+    @audit(operation_type="update", object_type="tool")
+    async def toggle_tool_state(
+        self, tool_id: int, enable: bool, current_user: Optional[str] = None
+    ) -> TbTool:
+        """
+        Enable or disable a tool.
+
+        Args:
+            tool_id: Tool ID
+            enable: Whether to enable or disable the tool
+            current_user: Current username
+
+        Returns:
+            TbTool: Updated tool
+
+        Raises:
+            ToolNotFoundError: If tool not found
+            ToolStateChangeError: If tool state change fails
+        """
+        # Get tool
+        tool = await self.get_tool_by_id(tool_id)
+        if not tool:
+            logger.error(f"Tool not found for state change operation: {tool_id}")
+            raise ToolNotFoundError(tool_id=tool_id)
+
+        # Check if state is already set
+        if tool.is_enabled == enable:
+            logger.warning(f"Tool {tool_id} is already {'enabled' if enable else 'disabled'}")
+            return tool
+
+        try:
+            # Update tool state
+            tool.is_enabled = enable
+            tool.updated_at = get_current_unix_ms()
+            tool.updated_by = current_user
+
+            await self.db.commit()
+            await self.db.refresh(tool)
+
+            logger.info(f"Tool {tool_id} has been {'enabled' if enable else 'disabled'} by {current_user}")
+            return tool
+        except Exception as e:
+            logger.error(f"Failed to {'enable' if enable else 'disable'} tool {tool_id}: {str(e)}")
+            raise ToolStateChangeError(tool_id=tool_id, enable=enable, error=str(e))
 
     @audit(operation_type="delete", object_type="tool")
     async def delete_tool(

@@ -20,6 +20,23 @@
             <template #icon><BugOutlined /></template>
             调试
           </a-button>
+          <a-button
+            v-if="tool.is_enabled"
+            type="primary"
+            danger
+            @click="handleToggleState(false)"
+          >
+            <template #icon><PauseCircleOutlined /></template>
+            禁用
+          </a-button>
+          <a-button
+            v-else
+            type="primary"
+            @click="handleToggleState(true)"
+          >
+            <template #icon><PlayCircleOutlined /></template>
+            启用
+          </a-button>
         </a-space>
       </template>
 
@@ -497,7 +514,9 @@ import {
   CloudUploadOutlined,
   BugOutlined,
   SettingOutlined,
-  FunctionOutlined
+  FunctionOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp, validateJson } from '../../utils/api-util'
@@ -765,6 +784,24 @@ const confirmDeploy = async () => {
     })
   } finally {
     deploying.value = false
+  }
+}
+
+const handleToggleState = async (enable) => {
+  try {
+    const action = enable ? 'enable' : 'disable'
+    await callApi({
+      method: 'patch',
+      url: `/api/v1/tool/${toolId.value}/${action}`,
+      successMessage: `${enable ? '启用' : '禁用'}成功`,
+      errorMessage: `${enable ? '启用' : '禁用'}失败`,
+      onSuccess: () => {
+        // Refresh tool data
+        fetchToolData()
+      }
+    })
+  } catch (error) {
+    console.error(`Error ${enable ? 'enabling' : 'disabling'} tool:`, error)
   }
 }
 </script>

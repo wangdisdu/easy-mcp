@@ -1,6 +1,7 @@
 fastapi==0.110.*
 httpx==0.28.*
 uvicorn==0.27.*
+mcp==1.6.*
 sqlmodel==0.0.16
 pydantic==2.11.*
 pydantic-settings==2.5.*

@@ -71,6 +71,24 @@
               <template #icon><EditOutlined /></template>
               编辑
             </a-button>
+            <a-button
+              v-if="record.is_enabled"
+              type="link"
+              size="small"
+              @click="handleToggleState(record.id, false)"
+            >
+              <template #icon><PauseCircleOutlined /></template>
+              禁用
+            </a-button>
+            <a-button
+              v-else
+              type="link"
+              size="small"
+              @click="handleToggleState(record.id, true)"
+            >
+              <template #icon><PlayCircleOutlined /></template>
+              启用
+            </a-button>
             <a-popconfirm
               title="确定要删除此工具吗？"
               ok-text="确定"
@@ -97,7 +115,9 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined
+  EyeOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp } from '../../utils/api-util'
@@ -152,7 +172,7 @@ const columns = [
   {
     title: '操作',
     key: 'action',
-    width: 200,
+    width: 280,
     fixed: 'right'
   }
 ]
@@ -214,6 +234,23 @@ const handleDelete = async (id) => {
     fetchTools()
   } catch (error) {
     console.error('Error deleting tool:', error)
+  }
+}
+
+const handleToggleState = async (id, enable) => {
+  try {
+    const action = enable ? 'enable' : 'disable'
+    await callApi({
+      method: 'patch',
+      url: `/api/v1/tool/${id}/${action}`,
+      successMessage: `${enable ? '启用' : '禁用'}成功`,
+      errorMessage: `${enable ? '启用' : '禁用'}失败`
+    })
+
+    // Refresh list
+    fetchTools()
+  } catch (error) {
+    console.error(`Error ${enable ? 'enabling' : 'disabling'} tool:`, error)
   }
 }
 </script>
