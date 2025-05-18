@@ -7,6 +7,7 @@ import DashboardView from '../views/DashboardView.vue'
 import ToolListView from '../views/tool/ToolListView.vue'
 import ToolEditView from '../views/tool/ToolEditView.vue'
 import ToolDetailView from '../views/tool/ToolDetailView.vue'
+import ToolDebugView from '../views/tool/ToolDebugView.vue'
 import FuncListView from '../views/func/FuncListView.vue'
 import FuncEditView from '../views/func/FuncEditView.vue'
 import FuncDetailView from '../views/func/FuncDetailView.vue'
@@ -58,6 +59,12 @@ const routes = [
     path: '/tool/:id/edit',
     name: 'tool-edit',
     component: ToolEditView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tool/:id/debug',
+    name: 'tool-debug',
+    component: ToolDebugView,
     meta: { requiresAuth: true }
   },
   // Function routes

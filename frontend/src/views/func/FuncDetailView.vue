@@ -1,6 +1,10 @@
 <template>
   <app-layout current-page-key="func">
-    <a-card title="函数详情" v-if="func">
+    <a-card v-if="func">
+      <template #title>
+        <span>函数详情 - {{ func.name }}</span>
+        <a-tag v-if="func.current_version" color="blue" class="version-tag">v{{ func.current_version }}</a-tag>
+      </template>
       <template #extra>
         <a-space>
           <a-button @click="router.push('/func')">
@@ -230,6 +234,10 @@
 
 .info-value {
   flex: 1;
+}
+
+.version-tag {
+  margin-left: 8px;
 }
 
 .code-container {

@@ -468,7 +468,7 @@ class FuncService:
         self, func_id: int, current_user: Optional[str] = None
     ) -> Optional[TbFunc]:
         """
-        Delete function.
+        Delete function and all related records (deployments, dependencies in both directions).
 
         Args:
             func_id: Function ID
@@ -479,7 +479,7 @@ class FuncService:
 
         Raises:
             FuncNotFoundError: If function not found
-            FuncInUseError: If function is in use
+            FuncInUseError: If function is in use by tools or other functions
         """
         # Get function
         func = await self.get_func_by_id(func_id)
@@ -492,6 +492,23 @@ class FuncService:
             raise FuncInUseError(
                 func_id=func_id, used_by_tools=tools_using, used_by_funcs=funcs_using
             )
+
+        # Delete related records in tb_func_deploy
+        await self.db.execute(
+            TbFuncDeploy.__table__.delete().where(TbFuncDeploy.func_id == func_id)
+        )
+
+        # Delete related records in tb_func_depends where this function is the dependent
+        await self.db.execute(
+            TbFuncDepends.__table__.delete().where(TbFuncDepends.func_id == func_id)
+        )
+
+        # Delete related records in tb_func_depends where this function is being depended on
+        await self.db.execute(
+            TbFuncDepends.__table__.delete().where(
+                TbFuncDepends.depends_on_func_id == func_id
+            )
+        )
 
         # Delete function
         await self.db.delete(func)

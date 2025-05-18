@@ -1,6 +1,6 @@
 <template>
   <app-layout current-page-key="config">
-    <a-card title="配置详情" v-if="config">
+    <a-card :title="`配置详情 - ${config ? config.name : ''}`" v-if="config">
       <template #extra>
         <a-space>
           <a-button @click="router.push('/config')">

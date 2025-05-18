@@ -1,6 +1,6 @@
 <template>
   <app-layout current-page-key="user">
-    <a-card title="用户详情" v-if="user">
+    <a-card :title="`用户详情 - ${user ? user.username : ''}`" v-if="user">
       <template #extra>
         <a-space>
           <a-button @click="router.push('/user')">

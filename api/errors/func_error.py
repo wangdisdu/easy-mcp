@@ -151,7 +151,7 @@ class FuncVersionNotFoundError(ServiceError):
         )
 
 
-class CircularDependencyError(Exception):
+class CircularDependencyError(ServiceError):
     """
     Exception raised when a circular dependency is detected.
     """
@@ -160,10 +160,27 @@ class CircularDependencyError(Exception):
         self,
         func_id: int,
         dependency_path: List[int],
+        reason: Optional[str] = None,
+        description: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
     ):
-        self.func_id = func_id
-        self.dependency_path = dependency_path
+        if details is None:
+            details = {}
+
+        details["func_id"] = func_id
+        details["dependency_path"] = dependency_path
 
         path_str = " -> ".join(map(str, dependency_path + [func_id]))
 
-        super().__init__(f"检测到循环依赖: {path_str}")
+        if reason is None:
+            reason = "检测到循环依赖"
+
+        if description is None:
+            description = f"检测到循环依赖: {path_str}"
+
+        super().__init__(
+            reason=reason,
+            description=description,
+            code="CIRCULAR_DEPENDENCY",
+            details=details,
+        )

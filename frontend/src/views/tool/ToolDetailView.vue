@@ -1,6 +1,10 @@
 <template>
   <app-layout current-page-key="tool">
-    <a-card title="工具详情" v-if="tool">
+    <a-card v-if="tool">
+      <template #title>
+        <span>工具详情 - {{ tool.name }}</span>
+        <a-tag v-if="tool.current_version" color="blue" class="version-tag">v{{ tool.current_version }}</a-tag>
+      </template>
       <template #extra>
         <a-space>
           <a-button @click="router.push('/tool')">
@@ -12,7 +16,7 @@
             编辑
           </a-button>
 
-          <a-button type="primary" @click="showDebugModal">
+          <a-button type="primary" @click="router.push(`/tool/${toolId}/debug`)">
             <template #icon><BugOutlined /></template>
             调试
           </a-button>
@@ -246,52 +250,7 @@
       </a-tabs>
     </a-card>
 
-    <!-- 调试模态框 -->
-    <a-modal
-      v-model:open="debugModalVisible"
-      title="工具调试"
-      width="800px"
-      :footer="null"
-    >
-      <a-form layout="vertical">
-        <a-form-item label="参数 (JSON)">
-          <a-textarea
-            v-model:value="debugParameters"
-            :rows="6"
-            placeholder="请输入 JSON 格式的参数"
-          />
-        </a-form-item>
-
-        <a-form-item>
-          <a-button type="primary" @click="handleDebug" :loading="debugging">
-            <template #icon><PlayCircleOutlined /></template>
-            执行
-          </a-button>
-        </a-form-item>
-      </a-form>
-
-      <a-divider />
-
-      <h3>执行结果</h3>
-      <a-spin :spinning="debugging">
-        <div v-if="debugResult">
-          <h4>返回值:</h4>
-          <pre>{{ JSON.stringify(debugResult.result, null, 2) }}</pre>
-
-          <h4>日志:</h4>
-          <a-list
-            :data-source="debugResult.logs"
-            size="small"
-            bordered
-          >
-            <template #renderItem="{ item }">
-              <a-list-item>{{ item }}</a-list-item>
-            </template>
-          </a-list>
-        </div>
-        <a-empty v-else description="暂无执行结果" />
-      </a-spin>
-    </a-modal>
+    <!-- Debug modal removed -->
 
     <!-- 发布模态框 -->
     <a-modal
@@ -447,6 +406,10 @@
   font-size: 13px;
 }
 
+.version-tag {
+  margin-left: 8px;
+}
+
 /* Parameters styles */
 .parameters-container {
   display: flex;
@@ -533,7 +496,6 @@ import {
   EditOutlined,
   CloudUploadOutlined,
   BugOutlined,
-  PlayCircleOutlined,
   SettingOutlined,
   FunctionOutlined
 } from '@ant-design/icons-vue'
@@ -563,11 +525,7 @@ const versionCode = ref('')
 const selectedRecord = ref(null)
 const rollingBack = ref(false)
 
-// Debug modal
-const debugModalVisible = ref(false)
-const debugParameters = ref('{}')
-const debugResult = ref(null)
-const debugging = ref(false)
+// Debug functionality moved to ToolDebugView.vue
 
 // Deploy modal
 const deployModalVisible = ref(false)
@@ -775,38 +733,7 @@ const confirmRollback = async () => {
   }
 }
 
-const showDebugModal = () => {
-  debugModalVisible.value = true
-  debugParameters.value = '{}'
-  debugResult.value = null
-}
-
-const handleDebug = async () => {
-  // Validate parameters
-  const validation = validateJson(debugParameters.value)
-  if (!validation.valid) {
-    message.error('参数 JSON 格式不正确: ' + validation.message)
-    return
-  }
-
-  debugging.value = true
-
-  try {
-    await callApi({
-      method: 'post',
-      url: `/api/v1/tool/${toolId.value}/debug`,
-      data: {
-        parameters: JSON.parse(debugParameters.value)
-      },
-      onSuccess: (data) => {
-        debugResult.value = data
-      },
-      errorMessage: '调试失败'
-    })
-  } finally {
-    debugging.value = false
-  }
-}
+// Debug functions moved to ToolDebugView.vue
 
 const showDeployModal = () => {
   deployModalVisible.value = true

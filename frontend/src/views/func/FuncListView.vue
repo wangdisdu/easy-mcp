@@ -44,7 +44,8 @@
 
         <!-- 版本列 -->
         <template v-else-if="column.key === 'version'">
-          <span>{{ record.current_version || '未发布' }}</span>
+          <a-tag v-if="record.current_version" color="blue">v{{ record.current_version }}</a-tag>
+          <span v-else>未发布</span>
         </template>
 
         <!-- 创建时间列 -->

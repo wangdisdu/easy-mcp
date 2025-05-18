@@ -166,7 +166,15 @@ class ToolDebugResponse(BaseModel):
     Attributes:
         result: Debug result
         logs: Debug logs
+        success: Whether the execution was successful
+        error_message: Error message if execution failed
     """
 
-    result: Any = Field(description="Debug result")
+    result: Optional[Any] = Field(default=None, description="Debug result")
     logs: List[str] = Field(default_factory=list, description="Debug logs")
+    success: bool = Field(
+        default=True, description="Whether the execution was successful"
+    )
+    error_message: Optional[str] = Field(
+        default=None, description="Error message if execution failed"
+    )

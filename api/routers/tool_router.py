@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_db
+from api.errors.tool_error import ToolExecutionError
 from api.models.tb_user import TbUser
 from api.schemas.common_schema import Response, PaginatedResponse
 from api.schemas.config_schema import ConfigResponse
@@ -289,9 +290,24 @@ async def debug_tool(
         Response[ToolDebugResponse]: Debug result
     """
     service = ToolService(db)
-    result, logs = await service.debug_tool(tool_id, debug_data.parameters)
 
-    return Response(data=ToolDebugResponse(result=result, logs=logs))
+    try:
+        result, logs = await service.execute_tool(tool_id, debug_data.parameters)
+        return Response(
+            data=ToolDebugResponse(
+                result=result, logs=logs, success=True, error_message=None
+            )
+        )
+    except ToolExecutionError as e:
+        # Return a successful response with error details
+        return Response(
+            data=ToolDebugResponse(
+                result=None,
+                logs=logs if "logs" in locals() else [],
+                success=False,
+                error_message=e.description,
+            )
+        )
 
 
 @router.get("/{tool_id}/func", response_model=Response[List[FuncResponse]])

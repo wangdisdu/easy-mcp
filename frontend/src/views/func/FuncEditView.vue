@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   SaveOutlined,
@@ -133,9 +133,12 @@ const fetchFuncData = async () => {
       method: 'get',
       url: `/api/v1/func/${funcId.value}`,
       onSuccess: (data) => {
+        formState.code = data.code
+        // Extract function name from code before setting the form name
+        currentFunctionName = extractFunctionName(data.code) || ''
+        // Set form fields after extracting function name to prevent immediate code update
         formState.name = data.name
         formState.description = data.description || ''
-        formState.code = data.code
 
         // Load dependencies
         fetchFuncDependencies()
@@ -262,6 +265,80 @@ const handleSaveAndDeploy = async () => {
     saving.value = false
   }
 }
+
+// Extract function name from code
+const extractFunctionName = (code) => {
+  // Match 'def function_name(' pattern
+  const match = code.match(/def\s+([a-zA-Z0-9_]+)\s*\(/)
+  return match ? match[1] : null
+}
+
+// Update function name in code
+const updateFunctionNameInCode = (oldName, newName) => {
+  if (!oldName || !newName || oldName === newName) return formState.code
+
+  try {
+    // Escape special regex characters in the old name
+    const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    // Replace function definition
+    let updatedCode = formState.code.replace(
+      new RegExp(`def\\s+${escapedOldName}\\s*\\(`, 'g'),
+      `def ${newName}(`
+    )
+
+    // Replace function calls within the same file
+    // Only replace exact matches (with word boundaries)
+    updatedCode = updatedCode.replace(
+      new RegExp(`\\b${escapedOldName}\\s*\\(`, 'g'),
+      `${newName}(`
+    )
+
+    // Replace docstring references if they exist
+    if (updatedCode.includes('"""')) {
+      // Look for function name in docstring title
+      updatedCode = updatedCode.replace(
+        new RegExp(`"""\\s*${escapedOldName}\\b`, 'g'),
+        `"""${newName}`
+      )
+    }
+
+    return updatedCode
+  } catch (error) {
+    console.error('Error updating function name in code:', error)
+    return formState.code
+  }
+}
+
+// Watch for function name changes
+let initialLoad = true
+let currentFunctionName = 'my_function' // Default to match the template
+
+watch(() => formState.code, (newCode) => {
+  // Extract current function name from code
+  if (initialLoad || !currentFunctionName) {
+    currentFunctionName = extractFunctionName(newCode) || 'my_function'
+    initialLoad = false
+  }
+}, { immediate: true })
+
+// Initialize form name from code if empty
+watch(() => formState.code, (newCode) => {
+  if (!formState.name && currentFunctionName && currentFunctionName !== 'function_name') {
+    formState.name = currentFunctionName
+  }
+}, { immediate: true })
+
+watch(() => formState.name, (newName, oldName) => {
+  if (initialLoad) return
+
+  // Don't update if the name is empty
+  if (!newName) return
+
+  // Update function name in code
+  formState.code = updateFunctionNameInCode(currentFunctionName, newName)
+  currentFunctionName = newName
+})
 
 const goBack = () => {
   router.back()

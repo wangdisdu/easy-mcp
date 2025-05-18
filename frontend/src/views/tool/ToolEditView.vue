@@ -134,8 +134,8 @@ const codeTabKey = ref('parameters')
 const formState = reactive({
   name: '',
   description: '',
-  parametersStr: JSON.stringify({ type: 'object', properties: {} }, null, 2),
-  code: 'import json\n\n# 工具实现代码\n# parameters: 工具参数\n# config: 工具配置\n# logs: 日志列表\n\n# 示例：\n# logs.append("开始执行工具")\n# result = {"message": "Hello, World!"}\n',
+  parametersStr: JSON.stringify({ type: 'object', properties: { name: { type: 'string', description: '名称' } }, required: ['name'] }, null, 2),
+  code: '# parameters: 传入参数\n# config: 传入配置\n# result: 用于返回值\n\n# 示例代码：\nprint("执行工具...")\nresult = {"message": "Hello, World!", "parameters": parameters, "config": config}\n',
   func_ids: [],
   config_ids: []
 })

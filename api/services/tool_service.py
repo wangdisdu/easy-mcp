@@ -2,7 +2,11 @@
 Tool service.
 """
 
+import io
 import json
+import logging
+import traceback
+from contextlib import redirect_stdout, redirect_stderr
 from typing import Optional, List, Tuple, Dict, Any
 
 from sqlalchemy import or_, desc
@@ -21,6 +25,9 @@ from api.models.tb_tool import TbTool, TbToolDeploy, TbToolFunc, TbToolConfig
 from api.schemas.tool_schema import ToolCreate, ToolUpdate
 from api.utils.audit_util import audit
 from api.utils.time_util import get_current_unix_ms
+
+# Get logger
+logger = logging.getLogger(__name__)
 
 
 class ToolService:
@@ -408,7 +415,7 @@ class ToolService:
         self, tool_id: int, current_user: Optional[str] = None
     ) -> Optional[TbTool]:
         """
-        Delete tool.
+        Delete tool and all related records (deployments, function associations, config associations).
 
         Args:
             tool_id: Tool ID
@@ -425,105 +432,26 @@ class ToolService:
         if not tool:
             raise ToolNotFoundError(tool_id=tool_id)
 
+        # Delete related records in tb_tool_deploy
+        await self.db.execute(
+            TbToolDeploy.__table__.delete().where(TbToolDeploy.tool_id == tool_id)
+        )
+
+        # Delete related records in tb_tool_func
+        await self.db.execute(
+            TbToolFunc.__table__.delete().where(TbToolFunc.tool_id == tool_id)
+        )
+
+        # Delete related records in tb_tool_config
+        await self.db.execute(
+            TbToolConfig.__table__.delete().where(TbToolConfig.tool_id == tool_id)
+        )
+
         # Delete tool
         await self.db.delete(tool)
         await self.db.commit()
 
         return tool
-
-    async def debug_tool(
-        self, tool_id: int, parameters: Dict[str, Any]
-    ) -> Tuple[Any, List[str]]:
-        """
-        Debug tool execution.
-
-        Args:
-            tool_id: Tool ID
-            parameters: Tool parameters
-
-        Returns:
-            Tuple[Any, List[str]]: Execution result and logs
-
-        Raises:
-            ToolNotFoundError: If tool not found
-            ToolExecutionError: If execution fails
-        """
-        # Get tool
-        tool = await self.get_tool_by_id(tool_id)
-        if not tool:
-            raise ToolNotFoundError(tool_id=tool_id)
-
-        # Get tool functions
-        result = await self.db.execute(
-            select(TbToolFunc).where(TbToolFunc.tool_id == tool_id)
-        )
-        tool_funcs = result.scalars().all()
-
-        # Get function code
-        func_code = {}
-        for tool_func in tool_funcs:
-            func_result = await self.db.execute(
-                select(TbFunc).where(TbFunc.id == tool_func.func_id)
-            )
-            func = func_result.scalars().first()
-            if func:
-                func_code[func.name] = func.code
-
-        # Get tool configs
-        result = await self.db.execute(
-            select(TbToolConfig).where(TbToolConfig.tool_id == tool_id)
-        )
-        tool_configs = result.scalars().all()
-
-        # Get config values
-        config_values = {}
-        for tool_config in tool_configs:
-            config_result = await self.db.execute(
-                select(TbConfig).where(TbConfig.id == tool_config.config_id)
-            )
-            config = config_result.scalars().first()
-            if config and config.conf_value:
-                try:
-                    config_values[config.name] = json.loads(config.conf_value)
-                except (json.JSONDecodeError, TypeError):
-                    config_values[config.name] = {}
-
-        # Execute tool
-        logs = []
-
-        try:
-            # Create execution environment
-            exec_globals = {
-                "parameters": parameters,  # Already a Python dict from the API
-                "config": config_values,
-                "logs": logs,
-                "print": lambda *args: logs.append(" ".join(str(arg) for arg in args)),
-            }
-
-            # Add function code to globals
-            for func_name, code in func_code.items():
-                try:
-                    exec(code, exec_globals)
-                except Exception as e:
-                    logs.append(f"Error loading function {func_name}: {str(e)}")
-                    raise ToolExecutionError(
-                        tool_id=tool_id,
-                        error_message=f"Error loading function {func_name}: {str(e)}",
-                    )
-
-            # Execute tool code
-            exec(tool.code, exec_globals)
-
-            # Get result
-            result = exec_globals.get("result", None)
-
-            return result, logs
-
-        except ToolExecutionError:
-            raise
-        except Exception as e:
-            logs.append(f"Error executing tool: {str(e)}")
-            raise ToolExecutionError(tool_id=tool_id, error_message=str(e))
 
     async def get_tool_funcs(self, tool_id: int) -> List[TbFunc]:
         """
@@ -580,3 +508,94 @@ class ToolService:
         configs = result.scalars().all()
 
         return configs
+
+    async def execute_tool(
+        self, tool_id: int, parameters: Dict[str, Any]
+    ) -> Tuple[Any, List[str]]:
+        """
+        Execute a tool with the given parameters.
+
+        Args:
+            tool_id: Tool ID
+            parameters: Tool parameters
+
+        Returns:
+            Tuple[Any, List[str]]: Execution result and logs
+
+        Raises:
+            ToolNotFoundError: If tool not found
+            ToolExecutionError: If execution fails
+        """
+        # Get tool
+        tool = await self.get_tool_by_id(tool_id)
+        if not tool:
+            raise ToolNotFoundError(tool_id=tool_id)
+
+        # Get tool functions
+        tool_funcs = await self.get_tool_funcs(tool_id)
+
+        # Get function code
+        func_code = {}
+        for func in tool_funcs:
+            func_code[func.name] = func.code
+
+        # Get tool configs
+        tool_configs = await self.get_tool_configs(tool_id)
+
+        # Get config values
+        config_values = {}
+        for conf in tool_configs:
+            if conf.conf_value:
+                try:
+                    conf_value_dic = json.loads(conf.conf_value)
+                    config_values.update(conf_value_dic)
+                except (json.JSONDecodeError, TypeError):
+                    logger.warning(f"Error loading config {conf.name}: Invalid JSON")
+
+        # Prepare the combined code
+        combined_code = f"""# Global variables
+parameters = {repr(parameters)}
+config = {repr(config_values)}
+result = None
+
+# Dependent functions
+{"\n".join([code for code in func_code.values()])}
+
+# Tool code
+{tool.code}
+"""
+
+        # Log the combined code for debugging
+        logger.debug(f"combined code:\n{combined_code}")
+
+        # Create a namespace for execution
+        namespace = {}
+
+        # Execute the module code directly
+        output_buffer = io.StringIO()
+        error_message = None
+
+        try:
+            with redirect_stdout(output_buffer), redirect_stderr(output_buffer):
+                exec(combined_code, namespace)
+        except Exception as e:
+            error_message = f"Error executing tool: {str(e)}\n{traceback.format_exc()}"
+
+        # Get the output
+        output = output_buffer.getvalue()
+
+        # Process the output into logs
+        logs = []
+        if output:
+            # Split the output into lines and add to logs
+            logs.extend([line for line in output.strip().split("\n") if line])
+
+        # Handle execution errors
+        if error_message:
+            logs.append(error_message)
+            raise ToolExecutionError(tool_id=tool_id, error_message=error_message)
+
+        # Get the result from the namespace
+        result = namespace.get("result")
+
+        return result, logs

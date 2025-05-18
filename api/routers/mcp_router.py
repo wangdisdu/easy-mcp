@@ -109,6 +109,6 @@ async def invoke_tool(
         Dict[str, Any]: Tool result
     """
     service = ToolService(db)
-    result, logs = await service.debug_tool(tool_id, parameters)
+    result, logs = await service.execute_tool(tool_id, parameters)
 
     return {"result": result, "logs": logs}

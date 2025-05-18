@@ -140,7 +140,7 @@ class ToolVersionNotFoundError(ServiceError):
         )
 
 
-class ToolExecutionError(Exception):
+class ToolExecutionError(ServiceError):
     """
     Exception raised when a tool execution fails.
     """
@@ -149,10 +149,25 @@ class ToolExecutionError(Exception):
         self,
         tool_id: int,
         error_message: str,
+        reason: Optional[str] = None,
+        description: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
     ):
-        self.tool_id = tool_id
-        self.error_message = error_message
-        self.details = details or {}
+        if details is None:
+            details = {}
 
-        super().__init__(f"工具执行失败: {error_message}")
+        details["tool_id"] = tool_id
+        details["error_message"] = error_message
+
+        if reason is None:
+            reason = "工具执行失败"
+
+        if description is None:
+            description = f"工具执行失败: {error_message}"
+
+        super().__init__(
+            reason=reason,
+            description=description,
+            code="TOOL_EXECUTION_ERROR",
+            details=details,
+        )
