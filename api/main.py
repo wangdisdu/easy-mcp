@@ -5,11 +5,14 @@ Main application module.
 import logging
 import warnings
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 # Filter out bcrypt version warning from passlib
 warnings.filterwarnings("ignore", message=".*error reading bcrypt version.*")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.config import get_config, setup_logging
 from api.database import create_db_and_tables, get_session
@@ -22,7 +25,7 @@ from api.routers import (
     func_router,
     config_router,
     audit_router,
-    mcp_router,
+    mcp_router, static_router,
 )
 from api.routers.mcp_router import mcp_server_lifespan
 from api.utils.init_admin import init_admin_user
@@ -99,15 +102,32 @@ app.include_router(audit_router.router, prefix="/api/v1")
 # Add MCP router
 app.include_router(mcp_router.router)
 
+# 挂载静态文件目录
+static_dir = Path("static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# 包含静态文件路由器（支持 Vue 路由）
+app.include_router(static_router.router)
+
 
 @app.get("/api/v1/system")
-async def root():
-    """Root endpoint.
+async def system():
+    """System endpoint.
 
     Returns:
         dict: Welcome message
     """
     return {"message": "Welcome to Easy MCP API"}
+
+
+@app.get("/")
+async def root():
+    """Root endpoint.
+
+    Returns:
+        RedirectResponse: Redirect to index.html
+    """
+    return RedirectResponse(url="/static/index.html")
 
 
 if __name__ == "__main__":
