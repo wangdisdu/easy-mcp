@@ -67,3 +67,8 @@ def get_weather_func(city, apiKey):
     except Exception as e:
         print(f"获取天气信息时发生错误: {str(e)}")
         return f"获取天气信息时发生错误: {str(e)}"
+
+
+city = parameters.get("city")
+apiKey = config.get("apiKey")
+result = get_weather_func(city, apiKey)

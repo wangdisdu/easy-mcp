@@ -7,11 +7,11 @@
             <template #icon><RollbackOutlined /></template>
             返回
           </a-button>
-          <a-button type="primary" @click="handleSave" :loading="saving">
+          <a-button type="primary" :loading="saving" @click="handleSave">
             <template #icon><SaveOutlined /></template>
             保存
           </a-button>
-          <a-button type="primary" @click="handleSaveAndDeploy" :loading="saving">
+          <a-button type="primary" :loading="saving" @click="handleSaveAndDeploy">
             <template #icon><CloudUploadOutlined /></template>
             {{ isEdit ? '保存并发布' : '创建并发布' }}
           </a-button>
@@ -66,7 +66,7 @@
         <a-form-item>
           <a-tabs v-model:activeKey="codeTabKey">
             <!-- 参数定义标签页 -->
-            <a-tab-pane key="parameters" tab="参数定义" forceRender>
+            <a-tab-pane key="parameters" tab="参数定义" force-render>
               <div class="tab-description">
                 <a-alert
                   message="参数定义说明"
@@ -88,7 +88,7 @@
             </a-tab-pane>
 
             <!-- 工具代码标签页 -->
-            <a-tab-pane key="code" tab="工具代码" forceRender>
+            <a-tab-pane key="code" tab="工具代码" force-render>
               <div class="editor-container">
                 <MonacoEditor
                   v-model:value="formState.code"

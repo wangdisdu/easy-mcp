@@ -7,7 +7,7 @@
             <template #icon><RollbackOutlined /></template>
             返回
           </a-button>
-          <a-button type="primary" @click="handleSave" :loading="saving">
+          <a-button type="primary" :loading="saving" @click="handleSave">
             <template #icon><SaveOutlined /></template>
             保存
           </a-button>
@@ -19,11 +19,11 @@
         layout="vertical"
         class="form-container"
       >
-        <a-form-item label="用户名" required v-if="!isEdit">
+        <a-form-item v-if="!isEdit" label="用户名" required>
           <a-input v-model:value="formState.username" placeholder="请输入用户名" />
         </a-form-item>
 
-        <a-form-item label="用户名" v-else>
+        <a-form-item v-else label="用户名">
           <a-input v-model:value="formState.username" disabled />
         </a-form-item>
 

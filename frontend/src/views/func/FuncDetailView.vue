@@ -81,15 +81,15 @@
                 <a-button
                   type="primary"
                   size="small"
-                  @click="showRollbackConfirm(record)"
                   :disabled="func.current_version === record.version"
                   class="rollback-button"
+                  @click="showRollbackConfirm(record)"
                 >
                   <template #icon><RollbackOutlined /></template>
                   回滚
                 </a-button>
               </div>
-              <div class="version-description" v-if="record.description">
+              <div v-if="record.description" class="version-description">
                 {{ record.description }}
               </div>
             </div>
@@ -100,7 +100,7 @@
             v-model:open="versionCodeVisible"
             :title="`函数代码 (v${selectedVersion})`"
             width="800px"
-            footer={null}
+            footer="{null}"
           >
             <pre class="code-display">{{ versionCode }}</pre>
           </a-modal>
@@ -110,10 +110,10 @@
             v-model:open="rollbackConfirmVisible"
             :title="`确认回滚到版本 v${selectedVersion}?`"
             width="800px"
-            @ok="confirmRollback"
             :confirm-loading="rollingBack"
             ok-text="确认回滚"
             cancel-text="取消"
+            @ok="confirmRollback"
           >
             <div class="rollback-warning">
               <a-alert
@@ -142,8 +142,8 @@
                 </template>
                 <template #title>
                   <a
-                    @click="router.push(`/func/${dep.id}`)"
                     class="func-link"
+                    @click="router.push(`/func/${dep.id}`)"
                   >
                     {{ dep.name }}
                   </a>
@@ -167,8 +167,8 @@
                 </template>
                 <template #title>
                   <a
-                    @click="router.push(`/tool/${tool.id}`)"
                     class="tool-link"
+                    @click="router.push(`/tool/${tool.id}`)"
                   >
                     {{ tool.name }}
                   </a>
@@ -192,8 +192,8 @@
                 </template>
                 <template #title>
                   <a
-                    @click="router.push(`/func/${depFunc.id}`)"
                     class="func-link"
+                    @click="router.push(`/func/${depFunc.id}`)"
                   >
                     {{ depFunc.name }}
                   </a>
@@ -211,143 +211,6 @@
     <!-- Deploy modal removed -->
   </app-layout>
 </template>
-
-<style scoped>
-.info-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 8px;
-}
-
-.info-row {
-  display: flex;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 8px;
-}
-
-.info-label {
-  width: 120px;
-  font-weight: 500;
-  color: #606060;
-}
-
-.info-value {
-  flex: 1;
-}
-
-.version-tag {
-  margin-left: 8px;
-}
-
-.code-container {
-  margin: 8px 0;
-}
-
-.code-display {
-  background-color: #f5f5f5;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  padding: 16px;
-  font-family: 'Courier New', Courier, monospace;
-  white-space: pre-wrap;
-  overflow-x: auto;
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.version-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.version-item {
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  padding: 12px 16px;
-  background-color: #fafafa;
-  transition: background-color 0.3s;
-}
-
-.version-item:hover {
-  background-color: #f0f8ff;
-}
-
-.version-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.version-label {
-  font-weight: 500;
-  color: #606060;
-}
-
-.time-label {
-  margin-left: 16px;
-}
-
-.version-tag {
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.version-tag:hover {
-  opacity: 0.8;
-  transform: scale(1.05);
-}
-
-.version-time {
-  color: #595959;
-}
-
-.rollback-button {
-  margin-left: auto;
-}
-
-.version-description {
-  margin-top: 8px;
-  color: #8c8c8c;
-  font-size: 13px;
-  white-space: pre-line;
-  border-top: 1px dashed #f0f0f0;
-  padding-top: 8px;
-}
-
-.rollback-code-header {
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #262626;
-}
-
-.tool-icon,
-.func-icon {
-  color: #1890ff;
-  font-size: 20px;
-}
-
-.tool-link,
-.func-link {
-  color: #1890ff;
-  font-weight: 500;
-}
-
-.tool-link:hover,
-.func-link:hover {
-  color: #40a9ff;
-  text-decoration: underline;
-}
-
-.tool-description,
-.func-description {
-  color: #606060;
-  font-size: 13px;
-}
-</style>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
@@ -585,3 +448,140 @@ const showVersionCode = async (record) => {
   }
 }
 </script>
+
+<style scoped>
+.info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.info-row {
+  display: flex;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.info-label {
+  width: 120px;
+  font-weight: 500;
+  color: #606060;
+}
+
+.info-value {
+  flex: 1;
+}
+
+.version-tag {
+  margin-left: 8px;
+}
+
+.code-container {
+  margin: 8px 0;
+}
+
+.code-display {
+  background-color: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 16px;
+  font-family: 'Courier New', Courier, monospace;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.version-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 12px 16px;
+  background-color: #fafafa;
+  transition: background-color 0.3s;
+}
+
+.version-item:hover {
+  background-color: #f0f8ff;
+}
+
+.version-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.version-label {
+  font-weight: 500;
+  color: #606060;
+}
+
+.time-label {
+  margin-left: 16px;
+}
+
+.version-tag {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.version-tag:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.version-time {
+  color: #595959;
+}
+
+.rollback-button {
+  margin-left: auto;
+}
+
+.version-description {
+  margin-top: 8px;
+  color: #8c8c8c;
+  font-size: 13px;
+  white-space: pre-line;
+  border-top: 1px dashed #f0f0f0;
+  padding-top: 8px;
+}
+
+.rollback-code-header {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #262626;
+}
+
+.tool-icon,
+.func-icon {
+  color: #1890ff;
+  font-size: 20px;
+}
+
+.tool-link,
+.func-link {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.tool-link:hover,
+.func-link:hover {
+  color: #40a9ff;
+  text-decoration: underline;
+}
+
+.tool-description,
+.func-description {
+  color: #606060;
+  font-size: 13px;
+}
+</style>

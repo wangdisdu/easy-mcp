@@ -1,6 +1,6 @@
 <template>
   <app-layout current-page-key="config">
-    <a-card :title="`配置详情 - ${config ? config.name : ''}`" v-if="config">
+    <a-card v-if="config" :title="`配置详情 - ${config ? config.name : ''}`">
       <template #extra>
         <a-space>
           <a-button @click="router.push('/config')">
@@ -67,7 +67,7 @@
                 <div class="config-item-row">
                   <div class="config-item-label">
                     {{ getPropertyLabel(key) }}
-                    <a-tooltip placement="right" v-if="config.value && config.value.conf_schema && config.value.conf_schema.properties && config.value.conf_schema.properties[key]">
+                    <a-tooltip v-if="config.value && config.value.conf_schema && config.value.conf_schema.properties && config.value.conf_schema.properties[key]" placement="right">
                       <template #title>
                         <div>
                           <div><strong>类型：</strong> {{ getPropertyType(key) }}</div>
@@ -100,8 +100,8 @@
                 </template>
                 <template #title>
                   <a
-                    @click="router.push(`/tool/${tool.id}`)"
                     class="tool-link"
+                    @click="router.push(`/tool/${tool.id}`)"
                   >
                     {{ tool.name }}
                   </a>
@@ -117,101 +117,6 @@
     </a-card>
   </app-layout>
 </template>
-
-<style scoped>
-.info-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 8px;
-}
-
-.info-row {
-  display: flex;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 8px;
-}
-
-.info-label {
-  width: 120px;
-  font-weight: 500;
-  color: #606060;
-}
-
-.info-value {
-  flex: 1;
-}
-
-.config-item {
-  margin-bottom: 16px;
-  padding: 12px;
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-}
-
-.config-item-row {
-  display: flex;
-  align-items: flex-start;
-}
-
-.config-item-label {
-  width: 180px;
-  font-weight: 500;
-  color: #606060;
-  padding-top: 8px;
-  padding-right: 16px;
-  display: flex;
-  align-items: center;
-}
-
-.config-item-icon {
-  margin-left: 6px;
-  color: #bfbfbf;
-  font-size: 14px;
-  cursor: help;
-}
-
-.config-item-value {
-  flex: 1;
-  background-color: #fafafa;
-  padding: 8px 12px;
-  border-radius: 4px;
-  overflow-x: auto;
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-}
-
-.config-item-value pre {
-  margin: 0;
-  width: 100%;
-}
-
-.empty-message {
-  padding: 24px 0;
-}
-
-.tool-icon {
-  color: #1890ff;
-  font-size: 20px;
-}
-
-.tool-link {
-  color: #1890ff;
-  font-weight: 500;
-}
-
-.tool-link:hover {
-  color: #40a9ff;
-  text-decoration: underline;
-}
-
-.tool-description {
-  color: #606060;
-  font-size: 13px;
-}
-
-</style>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
@@ -397,3 +302,98 @@ const fetchRelatedTools = async () => {
   }
 }
 </script>
+
+<style scoped>
+.info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.info-row {
+  display: flex;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.info-label {
+  width: 120px;
+  font-weight: 500;
+  color: #606060;
+}
+
+.info-value {
+  flex: 1;
+}
+
+.config-item {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.config-item-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.config-item-label {
+  width: 180px;
+  font-weight: 500;
+  color: #606060;
+  padding-top: 8px;
+  padding-right: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.config-item-icon {
+  margin-left: 6px;
+  color: #bfbfbf;
+  font-size: 14px;
+  cursor: help;
+}
+
+.config-item-value {
+  flex: 1;
+  background-color: #fafafa;
+  padding: 8px 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.config-item-value pre {
+  margin: 0;
+  width: 100%;
+}
+
+.empty-message {
+  padding: 24px 0;
+}
+
+.tool-icon {
+  color: #1890ff;
+  font-size: 20px;
+}
+
+.tool-link {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.tool-link:hover {
+  color: #40a9ff;
+  text-decoration: underline;
+}
+
+.tool-description {
+  color: #606060;
+  font-size: 13px;
+}
+
+</style>

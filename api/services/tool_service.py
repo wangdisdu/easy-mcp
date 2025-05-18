@@ -5,7 +5,9 @@ Tool service.
 import io
 import json
 import logging
+import os
 import traceback
+import yaml
 from contextlib import redirect_stdout, redirect_stderr
 from typing import Optional, List, Tuple, Dict, Any
 
@@ -23,7 +25,13 @@ from api.errors.tool_error import (
 from api.models.tb_config import TbConfig
 from api.models.tb_func import TbFunc
 from api.models.tb_tool import TbTool, TbToolDeploy, TbToolFunc, TbToolConfig
-from api.schemas.tool_schema import ToolCreate, ToolUpdate
+from api.schemas.config_schema import ConfigCreate
+from api.schemas.tool_schema import (
+    ToolCreate,
+    ToolUpdate,
+    BuiltinToolInfo,
+    BuiltinToolListResponse,
+)
 from api.utils.audit_util import audit
 from api.utils.time_util import get_current_unix_ms
 
@@ -451,7 +459,9 @@ class ToolService:
 
         # Check if state is already set
         if tool.is_enabled == enable:
-            logger.warning(f"Tool {tool_id} is already {'enabled' if enable else 'disabled'}")
+            logger.warning(
+                f"Tool {tool_id} is already {'enabled' if enable else 'disabled'}"
+            )
             return tool
 
         try:
@@ -463,10 +473,14 @@ class ToolService:
             await self.db.commit()
             await self.db.refresh(tool)
 
-            logger.info(f"Tool {tool_id} has been {'enabled' if enable else 'disabled'} by {current_user}")
+            logger.info(
+                f"Tool {tool_id} has been {'enabled' if enable else 'disabled'} by {current_user}"
+            )
             return tool
         except Exception as e:
-            logger.error(f"Failed to {'enable' if enable else 'disable'} tool {tool_id}: {str(e)}")
+            logger.error(
+                f"Failed to {'enable' if enable else 'disable'} tool {tool_id}: {str(e)}"
+            )
             raise ToolStateChangeError(tool_id=tool_id, enable=enable, error=str(e))
 
     @audit(operation_type="delete", object_type="tool")
@@ -605,23 +619,9 @@ class ToolService:
         # Get tool configs
         tool_configs = await self.get_tool_configs(tool_id)
 
-        # Get config values
-        config_values = {}
-        for conf in tool_configs:
-            if conf.conf_value:
-                try:
-                    conf_value_dic = json.loads(conf.conf_value)
-                    config_values.update(conf_value_dic)
-                except (json.JSONDecodeError, TypeError):
-                    logger.warning(f"Error loading config {conf.name}: Invalid JSON")
-
-        # Prepare the combined code
-        combined_code = f"""# Global variables
-parameters = {repr(parameters)}
-config = {repr(config_values)}
-result = None
-
-# Dependent functions
+        # Create a combined code string
+        combined_code = f"""
+# Function code
 {"\n".join([code for code in func_code.values()])}
 
 # Tool code
@@ -633,6 +633,24 @@ result = None
 
         # Create a namespace for execution
         namespace = {}
+
+        # Add parameters to namespace
+        namespace["parameters"] = parameters
+
+        # Add configs to namespace if available
+        if tool_configs:
+            config_var = {}
+            for config in tool_configs:
+                if config.conf_value:
+                    try:
+                        config_value = json.loads(config.conf_value)
+                        config_var.update(config_value)
+                    except json.JSONDecodeError:
+                        logger.warning(
+                            f"Invalid JSON in config {config.name}: {config.conf_value}"
+                        )
+                        continue
+            namespace["config"] = config_var
 
         # Execute the module code directly
         output_buffer = io.StringIO()
@@ -663,3 +681,170 @@ result = None
         result = namespace.get("result")
 
         return result, logs
+
+    async def list_builtin_tools(self) -> BuiltinToolListResponse:
+        """
+        List all builtin tools from the sample directory.
+
+        Returns:
+            BuiltinToolListResponse: List of builtin tools
+        """
+        # Get the sample directory path
+        sample_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sample")
+        if not os.path.exists(sample_dir):
+            logger.warning(f"Sample directory not found: {sample_dir}")
+            return BuiltinToolListResponse(tools=[])
+
+        # Get all subdirectories in the sample directory
+        tools = []
+        for tool_dir in os.listdir(sample_dir):
+            tool_path = os.path.join(sample_dir, tool_dir)
+            if not os.path.isdir(tool_path):
+                continue
+
+            # Check if manifest.yaml exists
+            manifest_path = os.path.join(tool_path, "manifest.yaml")
+            if not os.path.exists(manifest_path):
+                logger.warning(f"Manifest file not found in {tool_path}")
+                continue
+
+            try:
+                # Read manifest.yaml
+                with open(manifest_path, "r", encoding="utf-8") as f:
+                    manifest = yaml.safe_load(f)
+
+                # Create tool info
+                tool_info = BuiltinToolInfo(
+                    id=tool_dir,
+                    name=manifest.get("tool", tool_dir),
+                    description=manifest.get("description", ""),
+                    has_config="config" in manifest,
+                )
+                tools.append(tool_info)
+            except Exception as e:
+                logger.error(f"Error reading manifest file {manifest_path}: {str(e)}")
+                continue
+
+        return BuiltinToolListResponse(tools=tools)
+
+    @audit(operation_type="import", object_type="tool")
+    async def import_builtin_tool(
+        self, tool_id: str, current_user: Optional[str] = None
+    ) -> TbTool:
+        """
+        Import a builtin tool from the sample directory.
+
+        Args:
+            tool_id: Tool ID (directory name)
+            current_user: Current username
+
+        Returns:
+            TbTool: Imported tool
+
+        Raises:
+            ToolNotFoundError: If tool not found
+            ToolAlreadyExistsError: If tool already exists
+        """
+        # Get the sample directory path
+        sample_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sample")
+        tool_path = os.path.join(sample_dir, tool_id)
+        if not os.path.exists(tool_path) or not os.path.isdir(tool_path):
+            logger.error(f"Tool directory not found: {tool_path}")
+            raise ToolNotFoundError(name=tool_id)
+
+        # Check if manifest.yaml exists
+        manifest_path = os.path.join(tool_path, "manifest.yaml")
+        if not os.path.exists(manifest_path):
+            logger.error(f"Manifest file not found in {tool_path}")
+            raise ToolNotFoundError(name=tool_id)
+
+        try:
+            # Read manifest.yaml
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = yaml.safe_load(f)
+
+            # Get tool name
+            tool_name = manifest.get("tool", tool_id)
+
+            # Check if tool already exists
+            existing_tool = await self.get_tool_by_name(tool_name)
+            if existing_tool:
+                logger.warning(f"Tool already exists: {tool_name}")
+                raise ToolAlreadyExistsError(name=tool_name)
+
+            # Get tool code
+            code_file = manifest.get("code", {}).get("file")
+            if not code_file:
+                logger.error(f"Code file not specified in manifest: {manifest_path}")
+                raise ToolNotFoundError(name=tool_id)
+
+            code_path = os.path.join(tool_path, code_file)
+            if not os.path.exists(code_path):
+                # Try with _func suffix
+                func_name = os.path.splitext(code_file)[0]
+                code_path = os.path.join(tool_path, f"{func_name}_func.py")
+                if not os.path.exists(code_path):
+                    logger.error(f"Code file not found: {code_path}")
+                    raise ToolNotFoundError(name=tool_id)
+
+            # Read code file
+            with open(code_path, "r", encoding="utf-8") as f:
+                code = f.read()
+
+            # Create tool
+            tool_data = ToolCreate(
+                name=tool_name,
+                description=manifest.get("description", ""),
+                parameters=manifest.get("parameters", {}),
+                code=code,
+                config_ids=[],
+                func_ids=[],
+            )
+
+            # Create tool
+            tool = await self.create_tool(tool_data, current_user)
+
+            # Create config if needed
+            config_id = None
+            if "config" in manifest:
+                # Create config service
+                from api.services.config_service import ConfigService
+
+                config_service = ConfigService(self.db)
+
+                # Create config
+                config_data = ConfigCreate(
+                    name=f"{tool_name}_config",
+                    description=f"Configuration for {tool_name}",
+                    conf_schema=manifest.get("config", {}),
+                    conf_value=None,
+                )
+                config = await config_service.create_config(config_data, current_user)
+                config_id = config.id
+
+                # Associate config with tool
+                current_time = get_current_unix_ms()
+                tool_config = TbToolConfig(
+                    tool_id=tool.id,
+                    config_id=config_id,
+                    created_at=current_time,
+                    updated_at=current_time,
+                    created_by=current_user,
+                    updated_by=current_user,
+                )
+                self.db.add(tool_config)
+                await self.db.commit()
+
+            # Deploy tool
+            await self.deploy_tool(tool.id, "Initial import", current_user)
+
+            # Refresh tool
+            await self.db.refresh(tool)
+
+            return tool
+
+        except (ToolNotFoundError, ToolAlreadyExistsError):
+            raise
+        except Exception as e:
+            logger.error(f"Error importing tool {tool_id}: {str(e)}")
+            raise ToolNotFoundError(name=tool_id)

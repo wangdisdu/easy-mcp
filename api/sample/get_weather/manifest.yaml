@@ -1,0 +1,20 @@
+tool: get_weather
+description: 查询指定城市的天气，例如查询上海天气，查询北京天气等
+parameters:
+  type: object
+  properties:
+    city:
+      type: string
+      description: 查询目标城市
+  required:
+    - city
+config:
+  type: object
+  properties:
+    apiKey:
+      type: string
+      description: 高德apiKey
+  required:
+    - city
+code:
+  file: get_weather.py

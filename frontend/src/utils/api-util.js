@@ -1,10 +1,9 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
-import { useAuthStore } from '../stores/auth'
 
 /**
  * Call API with standard error handling
- * 
+ *
  * @param {Object} options - API call options
  * @param {string} options.method - HTTP method
  * @param {string} options.url - API URL
@@ -34,33 +33,21 @@ export const callApi = async (options) => {
       params
     })
 
-    if (response.data.code === 0) {
-      if (successMessage) {
-        message.success(successMessage)
-      }
-
-      if (onSuccess) {
-        onSuccess(response.data.data, response.data)
-      }
-
-      return response.data
-    } else {
-      const error = new Error(response.data.message || '未知错误')
-      error.response = response
-      error.errorHandled = true
-      throw error
+    // Success handling
+    if (successMessage) {
+      message.success(successMessage)
     }
+
+    if (onSuccess) {
+      onSuccess(response.data.data, response.data)
+    }
+
+    return response.data
   } catch (error) {
-    if (error.response?.status === 401) {
-      // Unauthorized, logout
-      const authStore = useAuthStore()
-      authStore.logout()
-      window.location.href = '/login'
-      error.errorHandled = true
-    }
-
-    if (!error.errorHandled) {
-      message.error(errorMessage || '遇到错误：' + (error.response?.data?.message || error.message || '未知错误'))
+    // If the error wasn't already handled by interceptors
+    if (!error.errorHandled && !error.isApiError) {
+      // Only show generic error message if not already handled
+      message.error(errorMessage || '遇到错误：' + (error.message || '未知错误'))
       error.errorHandled = true
     }
 
@@ -70,7 +57,7 @@ export const callApi = async (options) => {
 
 /**
  * Validate form data
- * 
+ *
  * @param {Object} form - Form data
  * @param {Array} requiredFields - Required fields
  * @returns {Object} - Validation result
@@ -90,7 +77,7 @@ export const validateForm = (form, requiredFields) => {
 
 /**
  * Validate JSON string
- * 
+ *
  * @param {string} jsonString - JSON string
  * @returns {Object} - Validation result
  */
@@ -108,13 +95,13 @@ export const validateJson = (jsonString) => {
 
 /**
  * Format timestamp to date string
- * 
+ *
  * @param {number} timestamp - Unix timestamp in milliseconds
  * @returns {string} - Formatted date string
  */
 export const formatTimestamp = (timestamp) => {
   if (!timestamp) return ''
-  
+
   const date = new Date(timestamp)
   return date.toLocaleString()
 }

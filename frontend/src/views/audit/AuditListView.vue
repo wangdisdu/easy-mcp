@@ -2,121 +2,126 @@
   <app-layout current-page-key="audit">
     <a-card title="审计日志">
       <div class="action-bar">
-      <a-form layout="inline">
-        <a-form-item label="用户名">
-          <a-input v-model:value="filters.username" placeholder="用户名" />
-        </a-form-item>
+        <a-form layout="inline">
+          <a-form-item label="用户名">
+            <a-input v-model:value="filters.username" placeholder="用户名" />
+          </a-form-item>
 
-        <a-form-item label="操作类型">
-          <a-select
-            v-model:value="filters.action"
-            style="width: 120px"
-            placeholder="操作类型"
-            allowClear
-          >
-            <a-select-option value="create">创建</a-select-option>
-            <a-select-option value="update">更新</a-select-option>
-            <a-select-option value="delete">删除</a-select-option>
-            <a-select-option value="deploy">发布</a-select-option>
-            <a-select-option value="rollback">回滚</a-select-option>
-          </a-select>
-        </a-form-item>
+          <a-form-item label="操作类型">
+            <a-select
+              v-model:value="filters.action"
+              style="width: 120px"
+              placeholder="操作类型"
+              allow-clear
+            >
+              <a-select-option value="create">创建</a-select-option>
+              <a-select-option value="update">更新</a-select-option>
+              <a-select-option value="delete">删除</a-select-option>
+              <a-select-option value="deploy">发布</a-select-option>
+              <a-select-option value="rollback">回滚</a-select-option>
+            </a-select>
+          </a-form-item>
 
-        <a-form-item label="资源类型">
-          <a-select
-            v-model:value="filters.resource_type"
-            style="width: 120px"
-            placeholder="资源类型"
-            allowClear
-          >
-            <a-select-option value="user">用户</a-select-option>
-            <a-select-option value="tool">工具</a-select-option>
-            <a-select-option value="func">函数</a-select-option>
-            <a-select-option value="config">配置</a-select-option>
-          </a-select>
-        </a-form-item>
+          <a-form-item label="资源类型">
+            <a-select
+              v-model:value="filters.resource_type"
+              style="width: 120px"
+              placeholder="资源类型"
+              allow-clear
+            >
+              <a-select-option value="user">用户</a-select-option>
+              <a-select-option value="tool">工具</a-select-option>
+              <a-select-option value="func">函数</a-select-option>
+              <a-select-option value="config">配置</a-select-option>
+            </a-select>
+          </a-form-item>
 
-        <a-form-item label="资源名称">
-          <a-input v-model:value="filters.resource_name" placeholder="资源名称" />
-        </a-form-item>
+          <a-form-item label="资源名称">
+            <a-input v-model:value="filters.resource_name" placeholder="资源名称" />
+          </a-form-item>
 
-        <a-form-item>
-          <a-button type="primary" @click="handleSearch">
-            <template #icon><SearchOutlined /></template>
-            搜索
-          </a-button>
-        </a-form-item>
-      </a-form>
-    </div>
+          <a-form-item>
+            <a-button type="primary" @click="handleSearch">
+              <template #icon><SearchOutlined /></template>
+              搜索
+            </a-button>
+          </a-form-item>
+        </a-form>
+      </div>
 
-    <a-table
-      :columns="columns"
-      :data-source="audits"
-      :loading="loading"
-      :pagination="{
-        current: currentPage,
-        pageSize: pageSize,
-        total: total,
-        onChange: handlePageChange,
-        showSizeChanger: true,
-        pageSizeOptions: ['10', '20', '50', '100'],
-        onShowSizeChange: handlePageSizeChange,
-        showTotal: (total) => `共 ${total} 条记录`
-      }"
-      :row-key="(record) => record.id"
-    >
-      <!-- 操作类型列 -->
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'action'">
-          <a-tag :color="getActionColor(record.action)">
-            {{ getActionText(record.action) }}
-          </a-tag>
+      <a-table
+        :columns="columns"
+        :data-source="audits"
+        :loading="loading"
+        :pagination="{
+          current: currentPage,
+          pageSize: pageSize,
+          total: total,
+          onChange: handlePageChange,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          onShowSizeChange: handlePageSizeChange,
+          showTotal: (total) => `共 ${total} 条记录`
+        }"
+        :row-key="(record) => record.id"
+      >
+        <!-- 操作类型列 -->
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'action'">
+            <a-tag :color="getActionColor(record.action)">
+              {{ getActionText(record.action) }}
+            </a-tag>
+          </template>
+
+          <!-- 资源类型列 -->
+          <template v-else-if="column.key === 'resource_type'">
+            <a-tag :color="getResourceColor(record.resource_type)">
+              {{ getResourceText(record.resource_type) }}
+            </a-tag>
+          </template>
+
+          <!-- 资源ID列 -->
+          <template v-else-if="column.key === 'resource_id'">
+            <a v-if="record.resource_id" @click="navigateToResource(record)">
+              {{ record.resource_id }}
+            </a>
+            <span v-else>-</span>
+          </template>
+
+          <!-- 资源名称列 -->
+          <template v-else-if="column.key === 'resource_name'">
+            <span>{{ record.resource_name || '-' }}</span>
+          </template>
+
+          <!-- 操作时间列 -->
+          <template v-else-if="column.key === 'created_at'">
+            <span>{{ formatTimestamp(record.created_at) }}</span>
+          </template>
+
+          <!-- 详情列 -->
+          <template v-else-if="column.key === 'details'">
+            <a-button
+              v-if="record.details"
+              type="link"
+              size="small"
+              @click="showDetails(record)"
+            >
+              <template #icon><EyeOutlined /></template>
+              查看详情
+            </a-button>
+          </template>
         </template>
+      </a-table>
 
-        <!-- 资源类型列 -->
-        <template v-else-if="column.key === 'resource_type'">
-          <a-tag :color="getResourceColor(record.resource_type)">
-            {{ getResourceText(record.resource_type) }}
-          </a-tag>
-        </template>
-
-        <!-- 资源ID列 -->
-        <template v-else-if="column.key === 'resource_id'">
-          <a v-if="record.resource_id" @click="navigateToResource(record)">
-            {{ record.resource_id }}
-          </a>
-          <span v-else>-</span>
-        </template>
-
-        <!-- 资源名称列 -->
-        <template v-else-if="column.key === 'resource_name'">
-          <span>{{ record.resource_name || '-' }}</span>
-        </template>
-
-        <!-- 操作时间列 -->
-        <template v-else-if="column.key === 'created_at'">
-          <span>{{ formatTimestamp(record.created_at) }}</span>
-        </template>
-
-        <!-- 详情列 -->
-        <template v-else-if="column.key === 'details'">
-          <a-button type="link" size="small" @click="showDetails(record)" v-if="record.details">
-            <template #icon><EyeOutlined /></template>
-            查看详情
-          </a-button>
-        </template>
-      </template>
-    </a-table>
-
-    <!-- 详情模态框 -->
-    <a-modal
-      v-model:open="detailsModalVisible"
-      title="操作详情"
-      width="800px"
-      :footer="null"
-    >
-      <pre v-if="selectedAudit">{{ JSON.stringify(selectedAudit.details, null, 2) }}</pre>
-    </a-modal>
+      <!-- 详情模态框 -->
+      <a-modal
+        v-model:open="detailsModalVisible"
+        title="操作详情"
+        width="800px"
+        :footer="null"
+      >
+        <pre v-if="selectedAudit">{{ JSON.stringify(selectedAudit.details, null, 2) }}</pre>
+      </a-modal>
     </a-card>
   </app-layout>
 </template>

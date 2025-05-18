@@ -2,109 +2,109 @@
   <app-layout current-page-key="dashboard">
     <a-card title="仪表盘">
       <a-row :gutter="16">
-      <a-col :span="6">
-        <a-card>
-          <template #title>
-            <ToolOutlined /> 工具
-          </template>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.toolCount }}</div>
-            <div class="stat-label">已注册工具</div>
-          </div>
-          <a-button type="link" @click="router.push('/tool')">查看全部</a-button>
-        </a-card>
-      </a-col>
-
-      <a-col :span="6">
-        <a-card>
-          <template #title>
-            <FunctionOutlined /> 函数
-          </template>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.funcCount }}</div>
-            <div class="stat-label">已注册函数</div>
-          </div>
-          <a-button type="link" @click="router.push('/func')">查看全部</a-button>
-        </a-card>
-      </a-col>
-
-      <a-col :span="6">
-        <a-card>
-          <template #title>
-            <SettingOutlined /> 配置
-          </template>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.configCount }}</div>
-            <div class="stat-label">已创建配置</div>
-          </div>
-          <a-button type="link" @click="router.push('/config')">查看全部</a-button>
-        </a-card>
-      </a-col>
-
-      <a-col :span="6">
-        <a-card>
-          <template #title>
-            <UserOutlined /> 用户
-          </template>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.userCount }}</div>
-            <div class="stat-label">系统用户</div>
-          </div>
-          <a-button type="link" @click="router.push('/user')">查看全部</a-button>
-        </a-card>
-      </a-col>
-    </a-row>
-
-    <a-row :gutter="16" style="margin-top: 16px">
-      <a-col :span="12">
-        <a-card title="最近活动">
-          <a-list
-            :data-source="recentActivities"
-            :loading="loading"
-          >
-            <template #renderItem="{ item }">
-              <a-list-item>
-                <a-list-item-meta>
-                  <template #title>
-                    {{ getActionText(item.action) }} {{ item.resource_type }}
-                  </template>
-                  <template #description>
-                    {{ item.username }} - {{ formatTimestamp(item.created_at) }}
-                  </template>
-                </a-list-item-meta>
-              </a-list-item>
+        <a-col :span="6">
+          <a-card>
+            <template #title>
+              <ToolOutlined /> 工具
             </template>
-          </a-list>
-        </a-card>
-      </a-col>
+            <div class="stat-card">
+              <div class="stat-number">{{ stats.toolCount }}</div>
+              <div class="stat-label">已注册工具</div>
+            </div>
+            <a-button type="link" @click="router.push('/tool')">查看全部</a-button>
+          </a-card>
+        </a-col>
 
-      <a-col :span="12">
-        <a-card title="最近工具">
-          <a-list
-            :data-source="recentTools"
-            :loading="loading"
-          >
-            <template #renderItem="{ item }">
-              <a-list-item>
-                <a-list-item-meta>
-                  <template #title>
-                    <a @click="router.push(`/tool/${item.id}`)">{{ item.name }}</a>
-                  </template>
-                  <template #description>
-                    {{ item.description || '无描述' }}
-                  </template>
-                </a-list-item-meta>
-                <template #actions>
-                  <a-tag :color="item.is_enabled ? 'green' : 'red'">
-                    {{ item.is_enabled ? '已启用' : '已禁用' }}
-                  </a-tag>
-                </template>
-              </a-list-item>
+        <a-col :span="6">
+          <a-card>
+            <template #title>
+              <FunctionOutlined /> 函数
             </template>
-          </a-list>
-        </a-card>
-      </a-col>
-    </a-row>
+            <div class="stat-card">
+              <div class="stat-number">{{ stats.funcCount }}</div>
+              <div class="stat-label">已注册函数</div>
+            </div>
+            <a-button type="link" @click="router.push('/func')">查看全部</a-button>
+          </a-card>
+        </a-col>
+
+        <a-col :span="6">
+          <a-card>
+            <template #title>
+              <SettingOutlined /> 配置
+            </template>
+            <div class="stat-card">
+              <div class="stat-number">{{ stats.configCount }}</div>
+              <div class="stat-label">已创建配置</div>
+            </div>
+            <a-button type="link" @click="router.push('/config')">查看全部</a-button>
+          </a-card>
+        </a-col>
+
+        <a-col :span="6">
+          <a-card>
+            <template #title>
+              <UserOutlined /> 用户
+            </template>
+            <div class="stat-card">
+              <div class="stat-number">{{ stats.userCount }}</div>
+              <div class="stat-label">系统用户</div>
+            </div>
+            <a-button type="link" @click="router.push('/user')">查看全部</a-button>
+          </a-card>
+        </a-col>
+      </a-row>
+
+      <a-row :gutter="16" style="margin-top: 16px">
+        <a-col :span="12">
+          <a-card title="最近活动">
+            <a-list
+              :data-source="recentActivities"
+              :loading="loading"
+            >
+              <template #renderItem="{ item }">
+                <a-list-item>
+                  <a-list-item-meta>
+                    <template #title>
+                      {{ getActionText(item.action) }} {{ item.resource_type }}
+                    </template>
+                    <template #description>
+                      {{ item.username }} - {{ formatTimestamp(item.created_at) }}
+                    </template>
+                  </a-list-item-meta>
+                </a-list-item>
+              </template>
+            </a-list>
+          </a-card>
+        </a-col>
+
+        <a-col :span="12">
+          <a-card title="最近工具">
+            <a-list
+              :data-source="recentTools"
+              :loading="loading"
+            >
+              <template #renderItem="{ item }">
+                <a-list-item>
+                  <a-list-item-meta>
+                    <template #title>
+                      <a @click="router.push(`/tool/${item.id}`)">{{ item.name }}</a>
+                    </template>
+                    <template #description>
+                      {{ item.description || '无描述' }}
+                    </template>
+                  </a-list-item-meta>
+                  <template #actions>
+                    <a-tag :color="item.is_enabled ? 'green' : 'red'">
+                      {{ item.is_enabled ? '已启用' : '已禁用' }}
+                    </a-tag>
+                  </template>
+                </a-list-item>
+              </template>
+            </a-list>
+          </a-card>
+        </a-col>
+      </a-row>
     </a-card>
   </app-layout>
 </template>

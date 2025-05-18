@@ -3,11 +3,16 @@
     <a-card :title="isEdit ? '编辑配置' : '创建配置'">
       <template #extra>
         <a-space>
-          <a-button @click="goBack" size="middle">
+          <a-button size="middle" @click="goBack">
             <template #icon><RollbackOutlined /></template>
             返回
           </a-button>
-          <a-button type="primary" @click="handleSave" :loading="saving" size="middle">
+          <a-button
+            type="primary"
+            :loading="saving"
+            size="middle"
+            @click="handleSave"
+          >
             <template #icon><SaveOutlined /></template>
             保存
           </a-button>
@@ -29,7 +34,7 @@
 
         <div>
           <a-tabs v-model:activeKey="configTabKey">
-            <a-tab-pane key="schema" tab="配置定义" forceRender>
+            <a-tab-pane key="schema" tab="配置定义" force-render>
               <div class="tab-description">
                 <a-alert
                   message="配置定义说明"
@@ -49,13 +54,13 @@
                 />
               </div>
             </a-tab-pane>
-            <a-tab-pane key="values" tab="配置设置" forceRender>
+            <a-tab-pane key="values" tab="配置设置" force-render>
               <div class="tab-description">
                 <div class="generate-button-container">
                   <a-button
                     type="primary"
-                    @click="generateConfigValues"
                     :disabled="!isValidSchema"
+                    @click="generateConfigValues"
                   >
                     <template #icon><ThunderboltOutlined /></template>
                     生成配置信息

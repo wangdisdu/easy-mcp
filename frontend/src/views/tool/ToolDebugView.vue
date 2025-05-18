@@ -124,17 +124,17 @@
               <a-form-item>
                 <a-button
                   type="primary"
-                  @click="handleDebug"
                   :loading="debugging"
                   :disabled="!tool || !parametersSchema"
+                  @click="handleDebug"
                 >
                   <template #icon><PlayCircleOutlined /></template>
                   执行
                 </a-button>
                 <a-button
                   style="margin-left: 8px;"
-                  @click="resetForm"
                   :disabled="!tool || !parametersSchema"
+                  @click="resetForm"
                 >
                   <template #icon><ReloadOutlined /></template>
                   重置
@@ -358,15 +358,20 @@ const handleDebug = async () => {
           message.success('执行成功')
         } else {
           resultTabKey.value = 'logs'
-          message.error('执行失败: ' + data.error_message)
+          // 不再显示错误提示，因为错误已在UI中显示
         }
       },
       // 不显示默认错误提示，因为我们已经在UI中显示了错误
-      showErrorMessage: false
+      errorMessage: null
     })
   } catch (error) {
+    // 错误已由拦截器处理，这里只需要处理UI状态
     console.error('Error debugging tool:', error)
-    message.error('调试请求失败，请检查网络连接')
+    debugResult.value = {
+      success: false,
+      error: error.response?.data?.message || error.message || '调试请求失败'
+    }
+    resultTabKey.value = 'logs'
   } finally {
     debugging.value = false
   }

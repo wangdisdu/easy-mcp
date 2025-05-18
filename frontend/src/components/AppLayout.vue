@@ -1,9 +1,24 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <a-layout-sider v-model:collapsed="collapsed" collapsible :width="180" :collapsedWidth="64">
+    <a-layout-sider
+      v-model:collapsed="collapsed"
+      collapsible
+      :width="180"
+      :collapsed-width="64"
+    >
       <div class="logo">
-        <img v-if="!collapsed" src="/logo/logo.svg" alt="Easy MCP" class="logo-large" />
-        <img v-else src="/logo/logo-small.svg" alt="MCP" class="logo-small" />
+        <img
+          v-if="!collapsed"
+          src="/logo/logo.svg"
+          alt="Easy MCP"
+          class="logo-large"
+        />
+        <img
+          v-else
+          src="/logo/logo-small.svg"
+          alt="MCP"
+          class="logo-small"
+        />
       </div>
       <a-menu
         v-model:selectedKeys="selectedKeys"

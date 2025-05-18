@@ -8,8 +8,8 @@
       <a-form
         :model="formState"
         name="login"
-        @finish="handleSubmit"
         layout="vertical"
+        @finish="handleSubmit"
       >
         <a-form-item
           name="username"

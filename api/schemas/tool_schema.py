@@ -178,3 +178,44 @@ class ToolDebugResponse(BaseModel):
     error_message: Optional[str] = Field(
         default=None, description="Error message if execution failed"
     )
+
+
+class BuiltinToolInfo(BaseModel):
+    """
+    Builtin tool information schema.
+
+    Attributes:
+        id: Tool ID (directory name)
+        name: Tool name
+        description: Tool description
+        has_config: Whether the tool has configuration
+    """
+
+    id: str = Field(description="Tool ID (directory name)")
+    name: str = Field(description="Tool name")
+    description: Optional[str] = Field(default=None, description="Tool description")
+    has_config: bool = Field(
+        default=False, description="Whether the tool has configuration"
+    )
+
+
+class BuiltinToolListResponse(BaseModel):
+    """
+    Builtin tool list response schema.
+
+    Attributes:
+        tools: List of builtin tools
+    """
+
+    tools: List[BuiltinToolInfo] = Field(description="List of builtin tools")
+
+
+class BuiltinToolImportRequest(BaseModel):
+    """
+    Builtin tool import request schema.
+
+    Attributes:
+        tool_id: Tool ID to import
+    """
+
+    tool_id: str = Field(description="Tool ID to import")

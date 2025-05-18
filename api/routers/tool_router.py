@@ -2,7 +2,7 @@
 Tool router.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,12 +14,15 @@ from api.schemas.common_schema import PaginatedResponse, Response
 from api.schemas.config_schema import ConfigResponse
 from api.schemas.func_schema import FuncResponse
 from api.schemas.tool_schema import (
+    BuiltinToolImportRequest,
+    BuiltinToolListResponse,
     ToolCreate,
     ToolDebugRequest,
     ToolDebugResponse,
     ToolDeployResponse,
     ToolResponse,
     ToolUpdate,
+    BuiltinToolInfo,
 )
 from api.services.tool_service import ToolService
 from api.utils.security_util import get_current_user
@@ -401,4 +404,42 @@ async def disable_tool(
     """
     tool_service = ToolService(db)
     tool = await tool_service.toggle_tool_state(tool_id, False, current_user.username)
+    return Response(data=ToolResponse.model_validate(tool))
+
+
+@router.get("-builtin", response_model=Response[BuiltinToolListResponse])
+async def list_builtin_tools(
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    List all builtin tools.
+
+    Returns:
+        Response[BuiltinToolListResponse]: List of builtin tools
+    """
+    service = ToolService(db)
+    response = await service.list_builtin_tools()
+    return Response(data=response)
+
+
+@router.post("-builtin/import", response_model=Response[ToolResponse])
+async def import_builtin_tool(
+    import_data: BuiltinToolImportRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Import a builtin tool.
+
+    Args:
+        import_data: Import data
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[ToolResponse]: Imported tool
+    """
+    service = ToolService(db)
+    tool = await service.import_builtin_tool(import_data.tool_id, current_user.username)
     return Response(data=ToolResponse.model_validate(tool))

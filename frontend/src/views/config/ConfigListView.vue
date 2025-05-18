@@ -16,63 +16,63 @@
       </div>
 
       <a-table
-      :columns="columns"
-      :data-source="configs"
-      :loading="loading"
-      :pagination="{
-        current: currentPage,
-        pageSize: pageSize,
-        total: total,
-        onChange: handlePageChange,
-        showSizeChanger: true,
-        pageSizeOptions: ['10', '20', '50', '100'],
-        onShowSizeChange: handlePageSizeChange,
-        showTotal: (total) => `共 ${total} 条记录`
-      }"
-      :row-key="(record) => record.id"
-    >
-      <!-- 名称列 -->
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'name'">
-          <a @click="router.push(`/config/${record.id}`)">{{ record.name }}</a>
-        </template>
+        :columns="columns"
+        :data-source="configs"
+        :loading="loading"
+        :pagination="{
+          current: currentPage,
+          pageSize: pageSize,
+          total: total,
+          onChange: handlePageChange,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          onShowSizeChange: handlePageSizeChange,
+          showTotal: (total) => `共 ${total} 条记录`
+        }"
+        :row-key="(record) => record.id"
+      >
+        <!-- 名称列 -->
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'name'">
+            <a @click="router.push(`/config/${record.id}`)">{{ record.name }}</a>
+          </template>
 
-        <!-- 描述列 -->
-        <template v-else-if="column.key === 'description'">
-          <span>{{ record.description || '无描述' }}</span>
-        </template>
+          <!-- 描述列 -->
+          <template v-else-if="column.key === 'description'">
+            <span>{{ record.description || '无描述' }}</span>
+          </template>
 
-        <!-- 创建时间列 -->
-        <template v-else-if="column.key === 'created_at'">
-          <span>{{ formatTimestamp(record.created_at) }}</span>
-        </template>
+          <!-- 创建时间列 -->
+          <template v-else-if="column.key === 'created_at'">
+            <span>{{ formatTimestamp(record.created_at) }}</span>
+          </template>
 
-        <!-- 操作列 -->
-        <template v-else-if="column.key === 'action'">
-          <a-space>
-            <a-button type="link" size="small" @click="router.push(`/config/${record.id}`)">
-              <template #icon><EyeOutlined /></template>
-              查看
-            </a-button>
-            <a-button type="link" size="small" @click="router.push(`/config/${record.id}/edit`)">
-              <template #icon><EditOutlined /></template>
-              编辑
-            </a-button>
-            <a-popconfirm
-              title="确定要删除此配置吗？"
-              ok-text="确定"
-              cancel-text="取消"
-              @confirm="handleDelete(record.id)"
-            >
-              <a-button type="link" size="small" danger>
-                <template #icon><DeleteOutlined /></template>
-                删除
+          <!-- 操作列 -->
+          <template v-else-if="column.key === 'action'">
+            <a-space>
+              <a-button type="link" size="small" @click="router.push(`/config/${record.id}`)">
+                <template #icon><EyeOutlined /></template>
+                查看
               </a-button>
-            </a-popconfirm>
-          </a-space>
+              <a-button type="link" size="small" @click="router.push(`/config/${record.id}/edit`)">
+                <template #icon><EditOutlined /></template>
+                编辑
+              </a-button>
+              <a-popconfirm
+                title="确定要删除此配置吗？"
+                ok-text="确定"
+                cancel-text="取消"
+                @confirm="handleDelete(record.id)"
+              >
+                <a-button type="link" size="small" danger>
+                  <template #icon><DeleteOutlined /></template>
+                  删除
+                </a-button>
+              </a-popconfirm>
+            </a-space>
+          </template>
         </template>
-      </template>
-    </a-table>
+      </a-table>
     </a-card>
   </app-layout>
 </template>

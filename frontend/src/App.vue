@@ -1,10 +1,12 @@
 <template>
   <router-view />
+  <ErrorHandler />
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
 import { useAuthStore } from './stores/auth'
+import ErrorHandler from './components/ErrorHandler.vue'
 
 const authStore = useAuthStore()
 

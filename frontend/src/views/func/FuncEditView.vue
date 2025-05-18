@@ -7,11 +7,11 @@
             <template #icon><RollbackOutlined /></template>
             返回
           </a-button>
-          <a-button type="primary" @click="handleSave" :loading="saving">
+          <a-button type="primary" :loading="saving" @click="handleSave">
             <template #icon><SaveOutlined /></template>
             保存
           </a-button>
-          <a-button type="primary" @click="handleSaveAndDeploy" :loading="saving">
+          <a-button type="primary" :loading="saving" @click="handleSaveAndDeploy">
             <template #icon><CloudUploadOutlined /></template>
             {{ isEdit ? '保存并发布' : '创建并发布' }}
           </a-button>

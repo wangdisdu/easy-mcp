@@ -80,7 +80,6 @@
               <div class="info-label">更新人:</div>
               <div class="info-value">{{ tool.updated_by || '-' }}</div>
             </div>
-
           </div>
         </a-tab-pane>
 
@@ -94,10 +93,10 @@
                 <a-tag class="parameter-type">{{ param.type || 'string' }}</a-tag>
                 <a-tag v-if="isRequired(key)" color="red">必填</a-tag>
               </div>
-              <div class="parameter-description" v-if="param.description">
+              <div v-if="param.description" class="parameter-description">
                 {{ param.description }}
               </div>
-              <div class="parameter-details" v-if="param.enum || param.default !== undefined || param.minimum !== undefined || param.maximum !== undefined || param.format || (param.items && param.items.type)">
+              <div v-if="param.enum || param.default !== undefined || param.minimum !== undefined || param.maximum !== undefined || param.format || (param.items && param.items.type)" class="parameter-details">
                 <div v-if="param.enum" class="parameter-enum">
                   <span class="parameter-detail-label">可选值:</span>
                   <div class="parameter-enum-values">
@@ -165,15 +164,15 @@
                 <a-button
                   type="primary"
                   size="small"
-                  @click="showRollbackConfirm(record)"
                   :disabled="tool.current_version === record.version"
                   class="rollback-button"
+                  @click="showRollbackConfirm(record)"
                 >
                   <template #icon><RollbackOutlined /></template>
                   回滚
                 </a-button>
               </div>
-              <div class="version-description" v-if="record.description">
+              <div v-if="record.description" class="version-description">
                 {{ record.description }}
               </div>
             </div>
@@ -184,7 +183,7 @@
             v-model:open="versionCodeVisible"
             :title="`工具代码 (v${selectedVersion})`"
             width="800px"
-            footer={null}
+            footer="{null}"
           >
             <pre class="code-display">{{ versionCode }}</pre>
           </a-modal>
@@ -194,10 +193,10 @@
             v-model:open="rollbackConfirmVisible"
             :title="`确认回滚到版本 v${selectedVersion}?`"
             width="800px"
-            @ok="confirmRollback"
             :confirm-loading="rollingBack"
             ok-text="确认回滚"
             cancel-text="取消"
+            @ok="confirmRollback"
           >
             <div class="rollback-warning">
               <a-alert
@@ -226,8 +225,8 @@
                 </template>
                 <template #title>
                   <a
-                    @click="router.push(`/config/${config.id}`)"
                     class="config-link"
+                    @click="router.push(`/config/${config.id}`)"
                   >
                     {{ config.name }}
                   </a>
@@ -251,8 +250,8 @@
                 </template>
                 <template #title>
                   <a
-                    @click="router.push(`/func/${func.id}`)"
                     class="func-link"
+                    @click="router.push(`/func/${func.id}`)"
                   >
                     {{ func.name }}
                   </a>
@@ -273,10 +272,10 @@
     <a-modal
       v-model:open="deployModalVisible"
       title="发布工具"
-      @ok="confirmDeploy"
       :confirm-loading="deploying"
       ok-text="确定"
       cancel-text="取消"
+      @ok="confirmDeploy"
     >
       <a-form layout="vertical">
         <a-form-item label="发布描述">
@@ -290,220 +289,6 @@
     </a-modal>
   </app-layout>
 </template>
-
-<style scoped>
-.info-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 8px;
-}
-
-.info-row {
-  display: flex;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 8px;
-}
-
-.info-label {
-  width: 120px;
-  font-weight: 500;
-  color: #606060;
-}
-
-.info-value {
-  flex: 1;
-}
-
-.code-container {
-  margin: 8px 0;
-}
-
-.code-display {
-  background-color: #f5f5f5;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  padding: 16px;
-  font-family: 'Courier New', Courier, monospace;
-  white-space: pre-wrap;
-  overflow-x: auto;
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.version-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.version-item {
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  padding: 12px 16px;
-  background-color: #fafafa;
-  transition: background-color 0.3s;
-}
-
-.version-item:hover {
-  background-color: #f0f8ff;
-}
-
-.version-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.version-label {
-  font-weight: 500;
-  color: #606060;
-}
-
-.time-label {
-  margin-left: 16px;
-}
-
-.version-tag {
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.version-tag:hover {
-  opacity: 0.8;
-  transform: scale(1.05);
-}
-
-.version-time {
-  color: #595959;
-}
-
-.rollback-button {
-  margin-left: auto;
-}
-
-.version-description {
-  margin-top: 8px;
-  color: #8c8c8c;
-  font-size: 13px;
-  white-space: pre-line;
-  border-top: 1px dashed #f0f0f0;
-  padding-top: 8px;
-}
-
-.rollback-code-header {
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #262626;
-}
-
-.config-icon,
-.func-icon {
-  color: #1890ff;
-  font-size: 20px;
-}
-
-.config-link,
-.func-link {
-  color: #1890ff;
-  font-weight: 500;
-}
-
-.config-link:hover,
-.func-link:hover {
-  color: #40a9ff;
-  text-decoration: underline;
-}
-
-.config-description,
-.func-description {
-  color: #606060;
-  font-size: 13px;
-}
-
-.version-tag {
-  margin-left: 8px;
-}
-
-/* Parameters styles */
-.parameters-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 8px;
-}
-
-.parameter-item {
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  padding: 16px;
-  background-color: #fafafa;
-}
-
-.parameter-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.parameter-name {
-  font-weight: 500;
-  font-size: 16px;
-  color: #262626;
-}
-
-.parameter-type {
-  font-size: 12px;
-  background-color: #e6f7ff;
-  color: #1890ff;
-}
-
-.parameter-description {
-  color: #595959;
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-
-.parameter-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-top: 1px dashed #f0f0f0;
-  padding-top: 12px;
-}
-
-.parameter-enum,
-.parameter-default,
-.parameter-min,
-.parameter-max,
-.parameter-format,
-.parameter-items,
-.parameter-min-length,
-.parameter-max-length {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.parameter-detail-label {
-  font-weight: 500;
-  color: #8c8c8c;
-  width: 60px;
-}
-
-.parameter-detail-value {
-  color: #262626;
-}
-
-.parameter-enum-values {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-</style>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
@@ -805,3 +590,217 @@ const handleToggleState = async (enable) => {
   }
 }
 </script>
+
+<style scoped>
+.info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.info-row {
+  display: flex;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.info-label {
+  width: 120px;
+  font-weight: 500;
+  color: #606060;
+}
+
+.info-value {
+  flex: 1;
+}
+
+.code-container {
+  margin: 8px 0;
+}
+
+.code-display {
+  background-color: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 16px;
+  font-family: 'Courier New', Courier, monospace;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.version-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 12px 16px;
+  background-color: #fafafa;
+  transition: background-color 0.3s;
+}
+
+.version-item:hover {
+  background-color: #f0f8ff;
+}
+
+.version-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.version-label {
+  font-weight: 500;
+  color: #606060;
+}
+
+.time-label {
+  margin-left: 16px;
+}
+
+.version-tag {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.version-tag:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.version-time {
+  color: #595959;
+}
+
+.rollback-button {
+  margin-left: auto;
+}
+
+.version-description {
+  margin-top: 8px;
+  color: #8c8c8c;
+  font-size: 13px;
+  white-space: pre-line;
+  border-top: 1px dashed #f0f0f0;
+  padding-top: 8px;
+}
+
+.rollback-code-header {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #262626;
+}
+
+.config-icon,
+.func-icon {
+  color: #1890ff;
+  font-size: 20px;
+}
+
+.config-link,
+.func-link {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.config-link:hover,
+.func-link:hover {
+  color: #40a9ff;
+  text-decoration: underline;
+}
+
+.config-description,
+.func-description {
+  color: #606060;
+  font-size: 13px;
+}
+
+.version-tag {
+  margin-left: 8px;
+}
+
+/* Parameters styles */
+.parameters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.parameter-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 16px;
+  background-color: #fafafa;
+}
+
+.parameter-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.parameter-name {
+  font-weight: 500;
+  font-size: 16px;
+  color: #262626;
+}
+
+.parameter-type {
+  font-size: 12px;
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.parameter-description {
+  color: #595959;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.parameter-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px dashed #f0f0f0;
+  padding-top: 12px;
+}
+
+.parameter-enum,
+.parameter-default,
+.parameter-min,
+.parameter-max,
+.parameter-format,
+.parameter-items,
+.parameter-min-length,
+.parameter-max-length {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.parameter-detail-label {
+  font-weight: 500;
+  color: #8c8c8c;
+  width: 60px;
+}
+
+.parameter-detail-value {
+  color: #262626;
+}
+
+.parameter-enum-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+</style>

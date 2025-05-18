@@ -7,6 +7,7 @@ import './assets/styles/global.css'
 import App from './App.vue'
 import router from './router'
 import { configureMonaco } from './utils/monaco-config'
+import './utils/axios-config' // Import axios configuration
 
 // Configure Monaco Editor
 configureMonaco()

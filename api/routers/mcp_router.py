@@ -106,9 +106,7 @@ class McpServerManager:
 
         # 创建 MCP 工具
         return McpTool(
-            name=tool.name,
-            description=tool.description or "",
-            inputSchema=parameters
+            name=tool.name, description=tool.description or "", inputSchema=parameters
         )
 
     async def _execute_tool(
@@ -153,7 +151,8 @@ class McpServerManager:
 
                     return [
                         TextContent(
-                            type="text", text=json.dumps(result_dict, ensure_ascii=False)
+                            type="text",
+                            text=json.dumps(result_dict, ensure_ascii=False),
                         )
                     ]
                 except Exception as e:

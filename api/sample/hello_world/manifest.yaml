@@ -1,0 +1,12 @@
+tool: hello_world
+description: A simple hello world tool
+parameters:
+  type: object
+  properties:
+    name:
+      type: string
+      description: Your name
+  required:
+    - name
+code:
+  file: hello_world.py
