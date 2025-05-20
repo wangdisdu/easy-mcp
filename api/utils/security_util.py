@@ -6,22 +6,24 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from fastapi import Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from api.config import get_config
+from api.config import get_config, AppConfig
 from api.database import get_db
 from api.errors.user_error import InvalidCredentialsError
 from api.models.tb_user import TbUser
 
-# Get JWT configuration
+# Get configuration
 config = get_config()
 SECRET_KEY = config.jwt.secret_key
 ALGORITHM = config.jwt.algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = config.jwt.access_token_expire_minutes
+ADMIN_USERNAME = config.admin_user.username
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -108,6 +110,24 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> T
         raise InvalidCredentialsError()
 
     return user
+
+
+async def check_is_admin(user: TbUser) -> None:
+    """
+    Check if user is admin.
+
+    Args:
+        user: User object
+
+    Raises:
+        HTTPException: If user is not admin
+    """
+    # 使用配置中的管理员用户名判断
+    if user.username != ADMIN_USERNAME:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this resource",
+        )
 
 
 async def get_current_user(

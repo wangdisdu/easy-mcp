@@ -55,6 +55,11 @@
           <span>审计日志</span>
           <router-link to="/audit" />
         </a-menu-item>
+        <a-menu-item key="log">
+          <template #icon><FileOutlined /></template>
+          <span>系统日志</span>
+          <router-link to="/log" />
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>
@@ -94,6 +99,7 @@ import {
   SettingOutlined,
   UserOutlined,
   FileSearchOutlined,
+  FileOutlined,
   LogoutOutlined,
   DownOutlined
 } from '@ant-design/icons-vue'

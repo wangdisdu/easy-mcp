@@ -26,6 +26,7 @@ from api.routers import (
     func_router,
     config_router,
     audit_router,
+    log_router,
     mcp_router,
     static_router,
 )
@@ -102,6 +103,7 @@ app.include_router(tool_router.router, prefix="/api/v1")
 app.include_router(func_router.router, prefix="/api/v1")
 app.include_router(config_router.router, prefix="/api/v1")
 app.include_router(audit_router.router, prefix="/api/v1")
+app.include_router(log_router.router, prefix="/api/v1")
 
 # Add MCP router
 app.include_router(mcp_router.router)
