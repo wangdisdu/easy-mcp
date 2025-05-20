@@ -29,7 +29,8 @@ api/
 │   ├── user_error.py        # 用户相关错误
 │   └── ...
 ├── middleware/              # 中间件
-│   ├── audit_middleware.py  # 审计中间件
+│   ├── error_middleware.py  # 错误处理中间件
+│   ├── request_id_middleware.py # 请求ID中间件
 │   └── ...
 ├── models/                  # 数据库模型
 │   ├── tb_user.py           # 用户表模型
@@ -330,9 +331,6 @@ async def create_user(
    - 操作时间：当前时间戳
    - 操作 IP：请求 IP
    - 操作结果：成功或失败
-
-3. **审计中间件**：
-   - 使用 `AuditMiddleware` 记录 HTTP 请求的审计日志
 
 ## 代码格式化
 

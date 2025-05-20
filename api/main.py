@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.config import get_config, setup_logging
 from api.database import create_db_and_tables, get_session
-from api.middleware.audit_middleware import AuditMiddleware
+# Audit middleware has been removed - audit logs are now handled by the audit decorator
 from api.middleware.error_middleware import ServiceErrorMiddleware
 from api.middleware.request_id_middleware import RequestIdMiddleware
 from api.routers import (
@@ -93,8 +93,7 @@ app.add_middleware(RequestIdMiddleware)
 # Add error handling middleware
 app.add_middleware(ServiceErrorMiddleware)
 
-# Add audit middleware
-app.add_middleware(AuditMiddleware)
+# Audit middleware has been removed - audit logs are now handled by the audit decorator
 
 # Add routers
 app.include_router(auth_router.router, prefix="/api/v1")
