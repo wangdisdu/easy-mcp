@@ -58,6 +58,10 @@
                 <template #icon><EditOutlined /></template>
                 编辑
               </a-button>
+              <a-button type="link" size="small" @click="openConfigModal(record)">
+                <template #icon><SettingOutlined /></template>
+                配置
+              </a-button>
               <a-popconfirm
                 title="确定要删除此配置吗？"
                 ok-text="确定"
@@ -73,6 +77,30 @@
           </template>
         </template>
       </a-table>
+
+      <!-- 配置弹窗 -->
+      <a-modal
+        v-model:open="configModalVisible"
+        :title="`配置设置: ${currentConfig?.name || ''}`"
+        width="800px"
+        :footer="null"
+        @cancel="closeConfigModal"
+      >
+        <template v-if="currentConfig">
+          <div v-if="!currentConfig.conf_schema || Object.keys(currentConfig.conf_schema).length === 0" class="empty-schema">
+            <a-empty description="没有可用的配置模式" />
+          </div>
+          <div v-else>
+            <JsonSchemaForm
+              :schema="currentConfig.conf_schema"
+              v-model:value="configFormValue"
+              :loading="configFormLoading"
+              @submit="saveConfigValue"
+              @cancel="closeConfigModal"
+            />
+          </div>
+        </template>
+      </a-modal>
     </a-card>
   </app-layout>
 </template>
@@ -84,11 +112,13 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined
+  EyeOutlined,
+  SettingOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp } from '../../utils/api-util'
 import AppLayout from '../../components/AppLayout.vue'
+import JsonSchemaForm from '../../components/JsonSchemaForm.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -97,6 +127,12 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchText = ref('')
+
+// 配置弹窗相关
+const configModalVisible = ref(false)
+const currentConfig = ref(null)
+const configFormLoading = ref(false)
+const configFormValue = ref({})
 
 const columns = [
   {
@@ -187,4 +223,63 @@ const handleDelete = async (id) => {
     console.error('Error deleting config:', error)
   }
 }
+
+// 打开配置弹窗
+const openConfigModal = (config) => {
+  currentConfig.value = config
+  configFormValue.value = config.conf_value || {}
+  configModalVisible.value = true
+}
+
+// 关闭配置弹窗
+const closeConfigModal = () => {
+  configModalVisible.value = false
+  currentConfig.value = null
+  configFormValue.value = {}
+}
+
+// 保存配置值
+const saveConfigValue = async (formData) => {
+  if (!currentConfig.value) return
+
+  configFormLoading.value = true
+
+  try {
+    await callApi({
+      method: 'patch',
+      url: `/api/v1/config/${currentConfig.value.id}`,
+      data: {
+        name: currentConfig.value.name,
+        description: currentConfig.value.description,
+        conf_schema: currentConfig.value.conf_schema,
+        conf_value: formData
+      },
+      successMessage: '配置保存成功',
+      errorMessage: '配置保存失败'
+    })
+
+    // 刷新列表
+    fetchConfigs()
+
+    // 关闭弹窗
+    closeConfigModal()
+  } catch (error) {
+    console.error('Error saving config value:', error)
+  } finally {
+    configFormLoading.value = false
+  }
+}
 </script>
+
+<style scoped>
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.empty-schema {
+  padding: 40px 0;
+  text-align: center;
+}
+</style>

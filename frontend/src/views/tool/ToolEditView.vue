@@ -70,7 +70,7 @@
               <div class="tab-description">
                 <a-alert
                   message="参数定义说明"
-                  description="使用JSON Schema格式定义工具的输入参数。定义每个参数的类型、描述、默认值等属性，系统将此定义作为MCP Tool input schema。"
+                  description="使用JSON Schema格式定义工具的输入参数。定义每个参数的类型和描述，系统将此定义作为MCP Tool的参数定义。"
                   type="info"
                   show-icon
                 />

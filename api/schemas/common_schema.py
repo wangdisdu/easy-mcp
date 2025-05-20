@@ -2,9 +2,10 @@
 Common schemas.
 """
 
+import time
 from typing import Generic, TypeVar, List, Optional, Dict, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 # Type variable for generic models
 T = TypeVar("T")
@@ -32,12 +33,21 @@ class PaginatedResponse(BaseModel, Generic[T]):
         message: Response message
         data: Response data
         total: Total number of items
+        timestamp: Response timestamp (Unix milliseconds)
+        request_id: Request ID for tracing
     """
 
     code: int = Field(default=0, description="Response code (0 for success)")
     message: str = Field(default="success", description="Response message")
     data: List[T] = Field(default_factory=list, description="Response data")
     total: int = Field(default=0, description="Total number of items")
+    timestamp: int = Field(
+        default_factory=lambda: int(time.time() * 1000),
+        description="Response timestamp (Unix milliseconds)",
+    )
+    request_id: Optional[str] = Field(
+        default=None, description="Request ID for tracing"
+    )
 
 
 class Response(BaseModel, Generic[T]):
@@ -48,11 +58,20 @@ class Response(BaseModel, Generic[T]):
         code: Response code (0 for success)
         message: Response message
         data: Response data
+        timestamp: Response timestamp (Unix milliseconds)
+        request_id: Request ID for tracing
     """
 
     code: int = Field(default=0, description="Response code (0 for success)")
     message: str = Field(default="success", description="Response message")
     data: Optional[T] = Field(default=None, description="Response data")
+    timestamp: int = Field(
+        default_factory=lambda: int(time.time() * 1000),
+        description="Response timestamp (Unix milliseconds)",
+    )
+    request_id: Optional[str] = Field(
+        default=None, description="Request ID for tracing"
+    )
 
 
 class ErrorResponse(BaseModel):
@@ -63,8 +82,17 @@ class ErrorResponse(BaseModel):
         code: Error code
         message: Error message
         details: Error details
+        timestamp: Response timestamp (Unix milliseconds)
+        request_id: Request ID for tracing
     """
 
     code: str = Field(description="Error code")
     message: str = Field(description="Error message")
     details: Optional[Dict[str, Any]] = Field(default=None, description="Error details")
+    timestamp: int = Field(
+        default_factory=lambda: int(time.time() * 1000),
+        description="Response timestamp (Unix milliseconds)",
+    )
+    request_id: Optional[str] = Field(
+        default=None, description="Request ID for tracing"
+    )

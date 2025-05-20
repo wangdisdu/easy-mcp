@@ -19,8 +19,18 @@ database_url = config.database.url
 if database_url.startswith("sqlite:"):
     database_url = database_url.replace("sqlite:", "sqlite+aiosqlite:", 1)
 
-# Create async engine
-engine = create_async_engine(database_url, echo=config.database.echo, future=True)
+# Create async engine with connection pooling
+engine = create_async_engine(
+    database_url,
+    echo=config.database.echo,
+    future=True,
+    # Connection pooling settings
+    pool_size=config.database.pool_size,
+    max_overflow=config.database.max_overflow,
+    pool_timeout=config.database.pool_timeout,
+    pool_recycle=config.database.pool_recycle,
+    pool_pre_ping=True,  # Verify connections before using them
+)
 
 # Create async session factory
 async_session_factory = sessionmaker(

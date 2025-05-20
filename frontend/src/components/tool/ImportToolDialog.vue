@@ -4,6 +4,8 @@
     title="导入内置工具"
     :confirm-loading="loading"
     :width="700"
+    ok-text="确定"
+    cancel-text="取消"
     @ok="handleImport"
     @cancel="handleCancel"
   >

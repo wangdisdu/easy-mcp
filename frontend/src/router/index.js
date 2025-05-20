@@ -1,23 +1,37 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Views
+// 使用懒加载优化路由加载性能
+// 登录页面不使用懒加载，因为它是首次访问的页面
 import LoginView from '../views/LoginView.vue'
-import DashboardView from '../views/DashboardView.vue'
-import ToolListView from '../views/tool/ToolListView.vue'
-import ToolEditView from '../views/tool/ToolEditView.vue'
-import ToolDetailView from '../views/tool/ToolDetailView.vue'
-import ToolDebugView from '../views/tool/ToolDebugView.vue'
-import FuncListView from '../views/func/FuncListView.vue'
-import FuncEditView from '../views/func/FuncEditView.vue'
-import FuncDetailView from '../views/func/FuncDetailView.vue'
-import ConfigListView from '../views/config/ConfigListView.vue'
-import ConfigEditView from '../views/config/ConfigEditView.vue'
-import ConfigDetailView from '../views/config/ConfigDetailView.vue'
-import UserListView from '../views/user/UserListView.vue'
-import UserEditView from '../views/user/UserEditView.vue'
-import UserDetailView from '../views/user/UserDetailView.vue'
-import AuditListView from '../views/audit/AuditListView.vue'
+
+// 使用动态导入实现懒加载
+// 仪表盘
+const DashboardView = () => import('../views/DashboardView.vue')
+
+// 工具相关页面
+const ToolListView = () => import('../views/tool/ToolListView.vue')
+const ToolEditView = () => import('../views/tool/ToolEditView.vue')
+const ToolDetailView = () => import('../views/tool/ToolDetailView.vue')
+const ToolDebugView = () => import('../views/tool/ToolDebugView.vue')
+
+// 函数相关页面
+const FuncListView = () => import('../views/func/FuncListView.vue')
+const FuncEditView = () => import('../views/func/FuncEditView.vue')
+const FuncDetailView = () => import('../views/func/FuncDetailView.vue')
+
+// 配置相关页面
+const ConfigListView = () => import('../views/config/ConfigListView.vue')
+const ConfigEditView = () => import('../views/config/ConfigEditView.vue')
+const ConfigDetailView = () => import('../views/config/ConfigDetailView.vue')
+
+// 用户相关页面
+const UserListView = () => import('../views/user/UserListView.vue')
+const UserEditView = () => import('../views/user/UserEditView.vue')
+const UserDetailView = () => import('../views/user/UserDetailView.vue')
+
+// 审计日志页面
+const AuditListView = () => import('../views/audit/AuditListView.vue')
 
 const routes = [
   {

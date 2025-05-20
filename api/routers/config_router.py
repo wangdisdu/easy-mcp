@@ -144,6 +144,31 @@ async def delete_config(
     return Response(data=ConfigResponse.model_validate(config) if config else None)
 
 
+@router.patch("/{config_id}", response_model=Response[ConfigResponse])
+async def patch_config(
+    config_id: int,
+    config_data: ConfigUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Partially update configuration.
+
+    Args:
+        config_id: Configuration ID
+        config_data: Configuration data
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[ConfigResponse]: Updated configuration
+    """
+    service = ConfigService(db)
+    config = await service.update_config(config_id, config_data, current_user.username)
+
+    return Response(data=ConfigResponse.model_validate(config) if config else None)
+
+
 @router.get("/{config_id}/usage", response_model=Response[ConfigUsageResponse])
 async def get_config_usage(
     config_id: int,

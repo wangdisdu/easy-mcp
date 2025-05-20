@@ -18,6 +18,7 @@ from api.config import get_config, setup_logging
 from api.database import create_db_and_tables, get_session
 from api.middleware.audit_middleware import AuditMiddleware
 from api.middleware.error_middleware import ServiceErrorMiddleware
+from api.middleware.request_id_middleware import RequestIdMiddleware
 from api.routers import (
     auth_router,
     user_router,
@@ -25,7 +26,8 @@ from api.routers import (
     func_router,
     config_router,
     audit_router,
-    mcp_router, static_router,
+    mcp_router,
+    static_router,
 )
 from api.routers.mcp_router import mcp_server_lifespan
 from api.utils.init_admin import init_admin_user
@@ -84,6 +86,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add request ID middleware (should be first to ensure all requests have an ID)
+app.add_middleware(RequestIdMiddleware)
 
 # Add error handling middleware
 app.add_middleware(ServiceErrorMiddleware)

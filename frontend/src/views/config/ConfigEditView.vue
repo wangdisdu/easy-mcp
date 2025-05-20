@@ -38,7 +38,7 @@
               <div class="tab-description">
                 <a-alert
                   message="配置定义说明"
-                  description="使用JSON Schema格式定义配置项的结构。定义每个配置项的类型、描述、默认值等属性，系统将根据此定义生成配置表单。"
+                  description="使用JSON Schema格式定义配置项的结构。定义每个配置项的类型和描述，系统将根据此定义生成配置表单。"
                   type="info"
                   show-icon
                 />

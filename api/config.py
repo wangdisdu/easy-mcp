@@ -23,6 +23,11 @@ class DatabaseConfig(BaseModel):
 
     url: str
     echo: bool = False
+    # 连接池配置
+    pool_size: int = 5  # 连接池大小
+    max_overflow: int = 10  # 最大溢出连接数
+    pool_timeout: int = 30  # 连接池超时时间（秒）
+    pool_recycle: int = 1800  # 连接回收时间（秒）
 
 
 class JWTConfig(BaseModel):
