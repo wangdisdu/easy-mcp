@@ -42,6 +42,14 @@
         </a-form-item>
 
         <a-form-item label="函数代码" required>
+          <div class="tab-description">
+            <a-alert
+              message="函数代码说明"
+              description="编写Python函数代码。函数名称应与上方输入的函数名称保持一致（修改函数名称时会自动调整）。函数可以被其他函数或工具调用，请确保函数签名和文档注释清晰。"
+              type="info"
+              show-icon
+            />
+          </div>
           <div class="editor-container">
             <MonacoEditor
               v-model:value="formState.code"
@@ -344,3 +352,25 @@ const goBack = () => {
   router.back()
 }
 </script>
+
+<style scoped>
+.tab-description {
+  margin-bottom: 20px;
+}
+
+.editor-container {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  height: 450px;
+  overflow: hidden;
+}
+
+.form-container {
+  max-width: 100%;
+}
+
+/* 增强表单项样式 */
+:deep(.ant-form-item-label > label) {
+  font-weight: 500;
+}
+</style>

@@ -38,36 +38,39 @@
               <div class="tab-description">
                 <a-alert
                   message="配置定义说明"
-                  description="使用JSON Schema格式定义配置项的结构。定义每个配置项的类型和描述，系统将根据此定义生成配置表单。"
+                  description="定义配置项的结构。您可以使用图形化编辑器或直接编辑JSON Schema。"
                   type="info"
                   show-icon
                 />
               </div>
-              <div class="editor-container">
-                <MonacoEditor
-                  v-model:value="formState.schemaStr"
-                  language="json"
-                  :options="{
-                    automaticLayout: true,
-                    scrollBeyondLastLine: false
-                  }"
-                />
+              <div class="schema-editor-container">
+                <JsonSchemaEditor v-model:value="formState.schemaStr" />
               </div>
             </a-tab-pane>
             <a-tab-pane key="values" tab="配置设置" force-render>
               <div class="tab-description">
                 <div class="generate-button-container">
-                  <a-button
-                    type="primary"
-                    :disabled="!isValidSchema"
-                    @click="generateConfigValues"
-                  >
-                    <template #icon><ThunderboltOutlined /></template>
-                    生成配置信息
-                  </a-button>
-                  <a-tooltip v-if="!isValidSchema" title="配置定义不是有效的JSON Schema">
-                    <QuestionCircleOutlined class="tooltip-icon" />
-                  </a-tooltip>
+                  <a-space>
+                    <a-button
+                      type="primary"
+                      :disabled="!isValidSchema"
+                      @click="generateConfigValues"
+                      size="middle"
+                    >
+                      <template #icon><ThunderboltOutlined /></template>
+                      生成配置信息
+                    </a-button>
+                    <a-tooltip v-if="!isValidSchema" title="配置定义不是有效的JSON Schema">
+                      <QuestionCircleOutlined class="tooltip-icon" />
+                    </a-tooltip>
+                  </a-space>
+                  <a-alert
+                    v-if="isValidSchema"
+                    message="点击生成配置信息按钮，系统将根据配置定义自动生成配置值"
+                    type="info"
+                    show-icon
+                    style="margin-top: 8px;"
+                  />
                 </div>
               </div>
               <div class="editor-container">
@@ -101,6 +104,7 @@ import { message } from 'ant-design-vue'
 import { callApi, validateJson } from '../../utils/api-util'
 import AppLayout from '../../components/AppLayout.vue'
 import MonacoEditor from '../../components/MonacoEditor.vue'
+import JsonSchemaEditor from '../../components/JsonSchemaEditor.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -312,3 +316,59 @@ const goBack = () => {
   router.back()
 }
 </script>
+
+<style scoped>
+.schema-editor-container {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  min-height: 450px;
+  padding: 16px;
+  background-color: #fafafa;
+}
+
+.tab-description {
+  margin-bottom: 20px;
+}
+
+.editor-container {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  height: 450px;
+  overflow: hidden;
+}
+
+.form-container {
+  max-width: 100%;
+}
+
+.generate-button-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.tooltip-icon {
+  color: #faad14;
+  margin-left: 8px;
+  cursor: help;
+}
+
+/* 增强标签页样式 */
+:deep(.ant-tabs-nav) {
+  margin-bottom: 16px;
+}
+
+:deep(.ant-tabs-tab) {
+  padding: 12px 16px;
+  font-size: 15px;
+}
+
+:deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  font-weight: 500;
+}
+
+/* 增强表单项样式 */
+:deep(.ant-form-item-label > label) {
+  font-weight: 500;
+}
+</style>

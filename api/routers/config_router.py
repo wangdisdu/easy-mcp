@@ -169,6 +169,31 @@ async def patch_config(
     return Response(data=ConfigResponse.model_validate(config) if config else None)
 
 
+@router.put("/{config_id}/value", response_model=Response[ConfigResponse])
+async def update_config_value(
+    config_id: int,
+    config_data: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Update only the configuration value.
+
+    Args:
+        config_id: Configuration ID
+        config_data: Configuration data with conf_value
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[ConfigResponse]: Updated configuration
+    """
+    service = ConfigService(db)
+    config = await service.update_config_value(config_id, config_data.get("conf_value"), current_user.username)
+
+    return Response(data=ConfigResponse.model_validate(config) if config else None)
+
+
 @router.get("/{config_id}/usage", response_model=Response[ConfigUsageResponse])
 async def get_config_usage(
     config_id: int,

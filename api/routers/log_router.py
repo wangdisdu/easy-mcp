@@ -85,6 +85,3 @@ async def get_log_content(
             displayed_lines=displayed_lines,
         )
     )
-
-
-# 日志文件下载功能已移除

@@ -246,12 +246,9 @@ const saveConfigValue = async (formData) => {
 
   try {
     await callApi({
-      method: 'patch',
-      url: `/api/v1/config/${currentConfig.value.id}`,
+      method: 'put',
+      url: `/api/v1/config/${currentConfig.value.id}/value`,
       data: {
-        name: currentConfig.value.name,
-        description: currentConfig.value.description,
-        conf_schema: currentConfig.value.conf_schema,
         conf_value: formData
       },
       successMessage: '配置保存成功',

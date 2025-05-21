@@ -70,25 +70,27 @@
               <div class="tab-description">
                 <a-alert
                   message="参数定义说明"
-                  description="使用JSON Schema格式定义工具的输入参数。定义每个参数的类型和描述，系统将此定义作为MCP Tool的参数定义。"
+                  description="定义工具的输入参数。您可以使用图形化编辑器或直接编辑JSON Schema。"
                   type="info"
                   show-icon
                 />
               </div>
-              <div class="editor-container">
-                <MonacoEditor
-                  v-model:value="formState.parametersStr"
-                  language="json"
-                  :options="{
-                    automaticLayout: true,
-                    scrollBeyondLastLine: false
-                  }"
-                />
+              <div class="schema-editor-container">
+                <!-- 使用新的JsonSchemaEditor组件 -->
+                <JsonSchemaEditor v-model:value="formState.parametersStr" />
               </div>
             </a-tab-pane>
 
             <!-- 工具代码标签页 -->
             <a-tab-pane key="code" tab="工具代码" force-render>
+              <div class="tab-description">
+                <a-alert
+                  message="工具代码说明"
+                  description="编写工具的执行代码。系统会自动提供以下变量：parameters（传入的参数）、config（绑定的配置）、result（用于返回结果）。您可以使用依赖函数和Python标准库。"
+                  type="info"
+                  show-icon
+                />
+              </div>
               <div class="editor-container">
                 <MonacoEditor
                   v-model:value="formState.code"
@@ -119,6 +121,7 @@ import { message } from 'ant-design-vue'
 import { callApi, validateJson } from '../../utils/api-util'
 import AppLayout from '../../components/AppLayout.vue'
 import MonacoEditor from '../../components/MonacoEditor.vue'
+import JsonSchemaEditor from '../../components/JsonSchemaEditor.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -383,3 +386,47 @@ const goBack = () => {
   router.back()
 }
 </script>
+
+<style scoped>
+.schema-editor-container {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  min-height: 450px;
+  padding: 16px;
+  background-color: #fafafa;
+}
+
+.tab-description {
+  margin-bottom: 20px;
+}
+
+.editor-container {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  height: 450px;
+  overflow: hidden;
+}
+
+.form-container {
+  max-width: 100%;
+}
+
+/* 增强标签页样式 */
+:deep(.ant-tabs-nav) {
+  margin-bottom: 16px;
+}
+
+:deep(.ant-tabs-tab) {
+  padding: 12px 16px;
+  font-size: 15px;
+}
+
+:deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  font-weight: 500;
+}
+
+/* 增强表单项样式 */
+:deep(.ant-form-item-label > label) {
+  font-weight: 500;
+}
+</style>

@@ -4,7 +4,7 @@ Configuration service.
 
 import json
 import logging
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -199,6 +199,45 @@ class ConfigService:
 
         if config_data.conf_value is not None:
             config.conf_value = json.dumps(config_data.conf_value)
+
+        config.updated_at = get_current_unix_ms()
+        config.updated_by = current_user
+
+        await self.db.commit()
+        await self.db.refresh(config)
+
+        return config
+
+    @audit(operation_type="update", object_type="config")
+    async def update_config_value(
+        self,
+        config_id: int,
+        conf_value: Optional[Dict[str, Any]],
+        current_user: Optional[str] = None,
+    ) -> Optional[TbConfig]:
+        """
+        Update only the configuration value.
+
+        Args:
+            config_id: Configuration ID
+            conf_value: Configuration value
+            current_user: Current username
+
+        Returns:
+            TbConfig: Updated configuration or None if not found
+
+        Raises:
+            ConfigNotFoundError: If configuration not found
+        """
+        # Get configuration
+        config = await self.get_config_by_id(config_id)
+        if not config:
+            logger.error(f"Configuration not found for value update operation: {config_id}")
+            raise ConfigNotFoundError(config_id=config_id)
+
+        # Update configuration value
+        if conf_value is not None:
+            config.conf_value = json.dumps(conf_value)
 
         config.updated_at = get_current_unix_ms()
         config.updated_by = current_user

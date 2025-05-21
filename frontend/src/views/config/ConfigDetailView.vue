@@ -11,6 +11,14 @@
             <template #icon><EditOutlined /></template>
             编辑
           </a-button>
+          <a-button
+            type="primary"
+            @click="showConfigureModal"
+            :disabled="!isValidSchema"
+          >
+            <template #icon><SettingOutlined /></template>
+            配置
+          </a-button>
         </a-space>
       </template>
 
@@ -115,6 +123,30 @@
         </a-tab-pane>
       </a-tabs>
     </a-card>
+
+    <!-- 配置弹窗 -->
+    <a-modal
+      v-model:open="configureModalVisible"
+      :title="`配置设置: ${config ? config.name : ''}`"
+      width="800px"
+      :footer="null"
+      @cancel="configureModalVisible = false"
+    >
+      <template v-if="config">
+        <div v-if="!isValidSchema" class="empty-schema">
+          <a-empty description="没有可用的配置模式" />
+        </div>
+        <div v-else>
+          <JsonSchemaForm
+            :schema="config.conf_schema"
+            v-model:value="configFormValue"
+            :loading="configFormLoading"
+            @submit="saveConfigValue"
+            @cancel="configureModalVisible = false"
+          />
+        </div>
+      </template>
+    </a-modal>
   </app-layout>
 </template>
 
@@ -125,10 +157,13 @@ import {
   RollbackOutlined,
   EditOutlined,
   QuestionCircleOutlined,
-  ToolOutlined
+  ToolOutlined,
+  SettingOutlined
 } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp, validateJson } from '../../utils/api-util'
 import AppLayout from '../../components/AppLayout.vue'
+import JsonSchemaForm from '../../components/JsonSchemaForm.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -138,6 +173,9 @@ const loading = ref(false)
 const config = ref(null)
 const relatedTools = ref([])
 const activeTabKey = ref('basic')
+const configureModalVisible = ref(false)
+const configFormValue = ref({})
+const configFormLoading = ref(false)
 
 // 计算属性：配置架构是否有效
 const isValidSchema = computed(() => {
@@ -301,6 +339,44 @@ const fetchRelatedTools = async () => {
     console.error('Error fetching related tools:', error)
   }
 }
+
+// 显示配置弹窗
+const showConfigureModal = () => {
+  if (!isValidSchema.value) {
+    message.error('配置架构无效，无法进行配置')
+    return
+  }
+
+  // 初始化表单值
+  configFormValue.value = { ...configValue.value }
+  configureModalVisible.value = true
+}
+
+// 保存配置值
+const saveConfigValue = async () => {
+  configFormLoading.value = true
+
+  try {
+    await callApi({
+      method: 'put',
+      url: `/api/v1/config/${configId.value}/value`,
+      data: {
+        conf_value: configFormValue.value
+      },
+      successMessage: '配置保存成功',
+      errorMessage: '配置保存失败',
+      onSuccess: () => {
+        // 关闭弹窗
+        configureModalVisible.value = false
+
+        // 刷新配置数据
+        fetchConfigData()
+      }
+    })
+  } finally {
+    configFormLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -396,4 +472,8 @@ const fetchRelatedTools = async () => {
   font-size: 13px;
 }
 
+.empty-schema {
+  padding: 24px 0;
+  text-align: center;
+}
 </style>
