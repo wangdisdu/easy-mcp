@@ -62,6 +62,8 @@ class ConfigResponse(ConfigBase):
         conf_value: Configuration values
         created_at: Creation time (UnixMS)
         updated_at: Update time (UnixMS)
+        created_by: Creator username
+        updated_by: Updater username
     """
 
     id: int = Field(description="Configuration ID")
@@ -72,6 +74,8 @@ class ConfigResponse(ConfigBase):
         default=None, description="Creation time (UnixMS)"
     )
     updated_at: Optional[int] = Field(default=None, description="Update time (UnixMS)")
+    created_by: Optional[str] = Field(default=None, description="Creator username")
+    updated_by: Optional[str] = Field(default=None, description="Updater username")
 
     class Config:
         from_attributes = True

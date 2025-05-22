@@ -57,6 +57,8 @@ class FuncResponse(FuncBase):
         current_version: Current version number
         created_at: Creation time (UnixMS)
         updated_at: Update time (UnixMS)
+        created_by: Creator username
+        updated_by: Updater username
     """
 
     id: int = Field(description="Function ID")
@@ -67,6 +69,8 @@ class FuncResponse(FuncBase):
         default=None, description="Creation time (UnixMS)"
     )
     updated_at: Optional[int] = Field(default=None, description="Update time (UnixMS)")
+    created_by: Optional[str] = Field(default=None, description="Creator username")
+    updated_by: Optional[str] = Field(default=None, description="Updater username")
 
     class Config:
         from_attributes = True
@@ -97,6 +101,7 @@ class FuncDeployResponse(FuncDeployBase):
         created_at: Creation time (UnixMS)
         updated_at: Update time (UnixMS)
         created_by: Creator username
+        updated_by: Updater username
     """
 
     id: int = Field(description="Deployment record ID")
@@ -106,6 +111,7 @@ class FuncDeployResponse(FuncDeployBase):
     )
     updated_at: Optional[int] = Field(default=None, description="Update time (UnixMS)")
     created_by: Optional[str] = Field(default=None, description="Creator username")
+    updated_by: Optional[str] = Field(default=None, description="Updater username")
 
     class Config:
         from_attributes = True

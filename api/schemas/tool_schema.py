@@ -69,6 +69,8 @@ class ToolResponse(ToolBase):
         current_version: Current version number
         created_at: Creation time (UnixMS)
         updated_at: Update time (UnixMS)
+        created_by: Creator username
+        updated_by: Updater username
     """
 
     id: int = Field(description="Tool ID")
@@ -80,6 +82,8 @@ class ToolResponse(ToolBase):
         default=None, description="Creation time (UnixMS)"
     )
     updated_at: Optional[int] = Field(default=None, description="Update time (UnixMS)")
+    created_by: Optional[str] = Field(default=None, description="Creator username")
+    updated_by: Optional[str] = Field(default=None, description="Updater username")
 
     class Config:
         from_attributes = True
@@ -122,6 +126,7 @@ class ToolDeployResponse(ToolDeployBase):
         created_at: Creation time (UnixMS)
         updated_at: Update time (UnixMS)
         created_by: Creator username
+        updated_by: Updater username
     """
 
     id: int = Field(description="Deployment record ID")
@@ -131,6 +136,7 @@ class ToolDeployResponse(ToolDeployBase):
     )
     updated_at: Optional[int] = Field(default=None, description="Update time (UnixMS)")
     created_by: Optional[str] = Field(default=None, description="Creator username")
+    updated_by: Optional[str] = Field(default=None, description="Updater username")
 
     class Config:
         from_attributes = True

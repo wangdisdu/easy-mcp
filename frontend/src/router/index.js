@@ -14,6 +14,7 @@ const ToolListView = () => import('../views/tool/ToolListView.vue')
 const ToolEditView = () => import('../views/tool/ToolEditView.vue')
 const ToolDetailView = () => import('../views/tool/ToolDetailView.vue')
 const ToolDebugView = () => import('../views/tool/ToolDebugView.vue')
+const OpenApiImportView = () => import('../views/tool/OpenApiImportView.vue')
 
 // 函数相关页面
 const FuncListView = () => import('../views/func/FuncListView.vue')
@@ -82,6 +83,12 @@ const routes = [
     path: '/tool/:id/debug',
     name: 'tool-debug',
     component: ToolDebugView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tool/import-openapi',
+    name: 'tool-import-openapi',
+    component: OpenApiImportView,
     meta: { requiresAuth: true }
   },
   // Function routes

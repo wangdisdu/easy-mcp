@@ -637,6 +637,7 @@ class ToolService:
         # Add parameters to namespace
         namespace["parameters"] = parameters
 
+        namespace["config"] = None
         # Add configs to namespace if available
         if tool_configs:
             config_var = {}

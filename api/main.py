@@ -3,12 +3,8 @@ Main application module.
 """
 
 import logging
-import warnings
 from contextlib import asynccontextmanager
 from pathlib import Path
-
-# Filter out bcrypt version warning from passlib
-warnings.filterwarnings("ignore", message=".*error reading bcrypt version.*")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -16,7 +12,6 @@ from fastapi.staticfiles import StaticFiles
 
 from api.config import get_config, setup_logging
 from api.database import create_db_and_tables, get_session
-# Audit middleware has been removed - audit logs are now handled by the audit decorator
 from api.middleware.error_middleware import ServiceErrorMiddleware
 from api.middleware.request_id_middleware import RequestIdMiddleware
 from api.routers import (
@@ -29,6 +24,7 @@ from api.routers import (
     log_router,
     mcp_router,
     static_router,
+    openapi_router,
 )
 from api.routers.mcp_router import mcp_server_lifespan
 from api.utils.init_admin import init_admin_user
@@ -104,6 +100,7 @@ app.include_router(func_router.router, prefix="/api/v1")
 app.include_router(config_router.router, prefix="/api/v1")
 app.include_router(audit_router.router, prefix="/api/v1")
 app.include_router(log_router.router, prefix="/api/v1")
+app.include_router(openapi_router.router, prefix="/api/v1")
 
 # Add MCP router
 app.include_router(mcp_router.router)

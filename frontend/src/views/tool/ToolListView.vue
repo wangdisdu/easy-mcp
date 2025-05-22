@@ -14,10 +14,25 @@
             <template #icon><PlusOutlined /></template>
             创建工具
           </a-button>
-          <a-button @click="showImportDialog = true">
-            <template #icon><ImportOutlined /></template>
-            导入工具
-          </a-button>
+          <a-dropdown>
+            <a-button>
+              <template #icon><ImportOutlined /></template>
+              导入工具
+              <DownOutlined />
+            </a-button>
+            <template #overlay>
+              <a-menu>
+                <a-menu-item key="1" @click="showImportDialog = true">
+                  <ApiOutlined />
+                  导入内置工具
+                </a-menu-item>
+                <a-menu-item key="2" @click="router.push('/tool/import-openapi')">
+                  <CloudOutlined />
+                  导入OpenAPI
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
         </div>
       </div>
 
@@ -131,12 +146,15 @@ import {
   EyeOutlined,
   PlayCircleOutlined,
   PauseCircleOutlined,
-  ImportOutlined
+  ImportOutlined,
+  DownOutlined,
+  ApiOutlined,
+  CloudOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp } from '../../utils/api-util'
 import AppLayout from '../../components/AppLayout.vue'
-import ImportToolDialog from '../../components/tool/ImportToolDialog.vue'
+import ImportToolDialog from './ImportToolDialog.vue'
 
 const router = useRouter()
 const loading = ref(false)
