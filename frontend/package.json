@@ -11,6 +11,8 @@
   "dependencies": {
     "ant-design-vue": "4.0.0",
     "axios": "1.6.0",
+    "dayjs": "^1.11.13",
+    "echarts": "^5.6.0",
     "monaco-editor": "0.44.0",
     "pinia": "2.1.6",
     "vue": "3.3.4",

@@ -11,7 +11,7 @@ import yaml
 from contextlib import redirect_stdout, redirect_stderr
 from typing import Optional, List, Tuple, Dict, Any
 
-from sqlalchemy import or_, desc
+from sqlalchemy import or_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -105,12 +105,19 @@ class ToolService:
             )
 
         # Count total
-        count_result = await self.db.execute(
-            select(TbTool.id).where(query.whereclause)
-            if query.whereclause
-            else select(TbTool.id)
-        )
-        total = len(count_result.scalars().all())
+        count_query = select(func.count(TbTool.id))
+
+        # Apply the same filters to count query
+        if search:
+            count_query = count_query.where(
+                or_(
+                    TbTool.name.ilike(f"%{search}%"),
+                    TbTool.description.ilike(f"%{search}%"),
+                )
+            )
+
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar()
 
         # Apply pagination and ordering
         query = query.order_by(desc(TbTool.id)).offset((page - 1) * size).limit(size)
@@ -586,7 +593,7 @@ class ToolService:
         return configs
 
     async def execute_tool(
-        self, tool_id: int, parameters: Dict[str, Any]
+        self, tool_id: int, parameters: Dict[str, Any], call_type: str = "mcp"
     ) -> Tuple[Any, List[str]]:
         """
         Execute a tool with the given parameters.
@@ -594,6 +601,7 @@ class ToolService:
         Args:
             tool_id: Tool ID
             parameters: Tool parameters
+            call_type: Call type (mcp, debug)
 
         Returns:
             Tuple[Any, List[str]]: Execution result and logs
@@ -602,25 +610,33 @@ class ToolService:
             ToolNotFoundError: If tool not found
             ToolExecutionError: If execution fails
         """
-        # Get tool
-        tool = await self.get_tool_by_id(tool_id)
-        if not tool:
-            logger.error(f"Tool not found for execution: {tool_id}")
-            raise ToolNotFoundError(tool_id=tool_id)
+        # Record start time for logging
+        request_time = get_current_unix_ms()
+        is_success = False
+        error_message = None
+        result_data = None
+        logs = []
 
-        # Get tool functions
-        tool_funcs = await self.get_tool_funcs(tool_id)
+        try:
+            # Get tool
+            tool = await self.get_tool_by_id(tool_id)
+            if not tool:
+                logger.error(f"Tool not found for execution: {tool_id}")
+                raise ToolNotFoundError(tool_id=tool_id)
 
-        # Get function code
-        func_code = {}
-        for func in tool_funcs:
-            func_code[func.name] = func.code
+            # Get tool functions
+            tool_funcs = await self.get_tool_funcs(tool_id)
 
-        # Get tool configs
-        tool_configs = await self.get_tool_configs(tool_id)
+            # Get function code
+            func_code = {}
+            for func in tool_funcs:
+                func_code[func.name] = func.code
 
-        # Create a combined code string
-        combined_code = f"""
+            # Get tool configs
+            tool_configs = await self.get_tool_configs(tool_id)
+
+            # Create a combined code string
+            combined_code = f"""
 # Function code
 {"\n".join([code for code in func_code.values()])}
 
@@ -628,60 +644,90 @@ class ToolService:
 {tool.code}
 """
 
-        # Log the combined code for debugging
-        logger.debug(f"combined code:\n{combined_code}")
+            # Log the combined code for debugging
+            logger.debug(f"combined code:\n{combined_code}")
 
-        # Create a namespace for execution
-        namespace = {}
+            # Create a namespace for execution
+            namespace = {}
 
-        # Add parameters to namespace
-        namespace["parameters"] = parameters
+            # Add parameters to namespace
+            namespace["parameters"] = parameters
 
-        namespace["config"] = None
-        # Add configs to namespace if available
-        if tool_configs:
-            config_var = {}
-            for config in tool_configs:
-                if config.conf_value:
-                    try:
-                        config_value = json.loads(config.conf_value)
-                        config_var.update(config_value)
-                    except json.JSONDecodeError:
-                        logger.warning(
-                            f"Invalid JSON in config {config.name}: {config.conf_value}"
-                        )
-                        continue
-            namespace["config"] = config_var
+            namespace["config"] = None
+            # Add configs to namespace if available
+            if tool_configs:
+                config_var = {}
+                for config in tool_configs:
+                    if config.conf_value:
+                        try:
+                            config_value = json.loads(config.conf_value)
+                            config_var.update(config_value)
+                        except json.JSONDecodeError:
+                            logger.warning(
+                                f"Invalid JSON in config {config.name}: {config.conf_value}"
+                            )
+                            continue
+                namespace["config"] = config_var
 
-        # Execute the module code directly
-        output_buffer = io.StringIO()
-        error_message = None
+            # Execute the module code directly
+            output_buffer = io.StringIO()
 
-        try:
-            with redirect_stdout(output_buffer), redirect_stderr(output_buffer):
-                exec(combined_code, namespace)
+            try:
+                with redirect_stdout(output_buffer), redirect_stderr(output_buffer):
+                    exec(combined_code, namespace)
+            except Exception as e:
+                error_message = (
+                    f"Error executing tool: {str(e)}\n{traceback.format_exc()}"
+                )
+                raise ToolExecutionError(tool_id=tool_id, error_message=error_message)
+
+            # Get the output
+            output = output_buffer.getvalue()
+
+            # Process the output into logs
+            if output:
+                # Split the output into lines and add to logs
+                logs.extend([line for line in output.strip().split("\n") if line])
+
+            # Get the result from the namespace
+            result = namespace.get("result")
+            result_data = result
+            is_success = True
+
+            return result, logs
+
         except Exception as e:
-            error_message = f"Error executing tool: {str(e)}\n{traceback.format_exc()}"
-
-        # Get the output
-        output = output_buffer.getvalue()
-
-        # Process the output into logs
-        logs = []
-        if output:
-            # Split the output into lines and add to logs
-            logs.extend([line for line in output.strip().split("\n") if line])
-
-        # Handle execution errors
-        if error_message:
-            logs.append(error_message)
+            error_message = str(e)
             logger.error(f"Tool execution error for tool {tool_id}: {error_message}")
-            raise ToolExecutionError(tool_id=tool_id, error_message=error_message)
+            raise
 
-        # Get the result from the namespace
-        result = namespace.get("result")
+        finally:
+            # Record tool log
+            try:
+                # Import here to avoid circular imports
+                from api.services.tool_log_service import ToolLogService
 
-        return result, logs
+                response_time = get_current_unix_ms()
+                duration_ms = response_time - request_time
+
+                tool_log_service = ToolLogService(self.db)
+                await tool_log_service.create_log(
+                    tool_name=tool.name
+                    if "tool" in locals() and tool
+                    else f"tool_{tool_id}",
+                    call_type=call_type,
+                    tool_id=tool_id,
+                    request_time=request_time,
+                    response_time=response_time,
+                    duration_ms=duration_ms,
+                    is_success=is_success,
+                    error_message=error_message,
+                    request_params=parameters,
+                    response_data=result_data,
+                )
+            except Exception as log_error:
+                # Log recording failure should not affect main functionality
+                logger.warning(f"Failed to record tool log: {str(log_error)}")
 
     async def list_builtin_tools(self) -> BuiltinToolListResponse:
         """

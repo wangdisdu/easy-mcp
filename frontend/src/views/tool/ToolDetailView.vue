@@ -183,7 +183,7 @@
             v-model:open="versionCodeVisible"
             :title="`工具代码 (v${selectedVersion})`"
             width="800px"
-            footer="{null}"
+            :footer="null"
           >
             <pre class="code-display">{{ versionCode }}</pre>
           </a-modal>
@@ -265,8 +265,6 @@
         </a-tab-pane>
       </a-tabs>
     </a-card>
-
-    <!-- Debug modal removed -->
 
     <!-- 发布模态框 -->
     <a-modal

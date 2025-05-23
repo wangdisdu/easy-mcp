@@ -37,6 +37,9 @@ const AuditListView = () => import('../views/audit/AuditListView.vue')
 // 系统日志页面
 const LogListView = () => import('../views/log/LogListView.vue')
 
+// 工具日志相关页面
+const ToolLogListView = () => import('../views/tool-call/ToolLogListView.vue')
+
 const routes = [
   {
     path: '/',
@@ -178,6 +181,13 @@ const routes = [
     path: '/log',
     name: 'log-list',
     component: LogListView,
+    meta: { requiresAuth: true }
+  },
+  // Tool Log routes
+  {
+    path: '/tool-log',
+    name: 'tool-log-list',
+    component: ToolLogListView,
     meta: { requiresAuth: true }
   }
 ]

@@ -2,51 +2,65 @@
   <app-layout current-page-key="audit">
     <a-card title="审计日志">
       <div class="action-bar">
-        <a-form layout="inline">
-          <a-form-item label="用户名">
-            <a-input v-model:value="filters.username" placeholder="用户名" />
-          </a-form-item>
+        <a-space>
+          <a-input
+            v-model:value="filters.username"
+            placeholder="用户名"
+            style="width: 150px"
+            allow-clear
+          />
 
-          <a-form-item label="操作类型">
-            <a-select
-              v-model:value="filters.action"
-              style="width: 120px"
-              placeholder="操作类型"
-              allow-clear
-            >
-              <a-select-option value="create">创建</a-select-option>
-              <a-select-option value="update">更新</a-select-option>
-              <a-select-option value="delete">删除</a-select-option>
-              <a-select-option value="deploy">发布</a-select-option>
-              <a-select-option value="rollback">回滚</a-select-option>
-            </a-select>
-          </a-form-item>
+          <a-select
+            v-model:value="filters.action"
+            placeholder="操作类型"
+            style="width: 120px"
+            allow-clear
+          >
+            <a-select-option value="create">创建</a-select-option>
+            <a-select-option value="update">更新</a-select-option>
+            <a-select-option value="delete">删除</a-select-option>
+            <a-select-option value="deploy">发布</a-select-option>
+            <a-select-option value="rollback">回滚</a-select-option>
+          </a-select>
 
-          <a-form-item label="资源类型">
-            <a-select
-              v-model:value="filters.resource_type"
-              style="width: 120px"
-              placeholder="资源类型"
-              allow-clear
-            >
-              <a-select-option value="user">用户</a-select-option>
-              <a-select-option value="tool">工具</a-select-option>
-              <a-select-option value="func">函数</a-select-option>
-              <a-select-option value="config">配置</a-select-option>
-            </a-select>
-          </a-form-item>
+          <a-select
+            v-model:value="filters.resource_type"
+            placeholder="资源类型"
+            style="width: 120px"
+            allow-clear
+          >
+            <a-select-option value="user">用户</a-select-option>
+            <a-select-option value="tool">工具</a-select-option>
+            <a-select-option value="func">函数</a-select-option>
+            <a-select-option value="config">配置</a-select-option>
+          </a-select>
 
-          <a-form-item label="资源名称">
-            <a-input v-model:value="filters.resource_name" placeholder="资源名称" />
-          </a-form-item>
+          <a-input
+            v-model:value="filters.resource_name"
+            placeholder="资源名称"
+            style="width: 150px"
+            allow-clear
+          />
 
-          <a-form-item>
-            <a-button type="primary" @click="handleSearch">
-              <template #icon><SearchOutlined /></template>
-              搜索
-            </a-button>
-          </a-form-item>
-        </a-form>
+          <a-range-picker
+            v-model:value="dateRange"
+            show-time
+            format="YYYY-MM-DD HH:mm:ss"
+            @change="handleDateRangeChange"
+            :placeholder="['开始时间', '结束时间']"
+          />
+        </a-space>
+
+        <a-space>
+          <a-button type="primary" @click="handleSearch">
+            <template #icon><SearchOutlined /></template>
+            查询
+          </a-button>
+          <a-button @click="handleReset">
+            <template #icon><ClearOutlined /></template>
+            重置
+          </a-button>
+        </a-space>
       </div>
 
       <a-table
@@ -107,7 +121,7 @@
               @click="showDetails(record)"
             >
               <template #icon><EyeOutlined /></template>
-              查看详情
+              查看
             </a-button>
           </template>
         </template>
@@ -131,7 +145,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   SearchOutlined,
-  EyeOutlined
+  EyeOutlined,
+  ReloadOutlined,
+  ClearOutlined
 } from '@ant-design/icons-vue'
 import { callApi, formatTimestamp } from '../../utils/api-util'
 import AppLayout from '../../components/AppLayout.vue'
@@ -149,6 +165,8 @@ const filters = reactive({
   resource_type: undefined,
   resource_name: ''
 })
+
+const dateRange = ref([])
 
 const detailsModalVisible = ref(false)
 const selectedAudit = ref(null)
@@ -229,6 +247,12 @@ const fetchAudits = async () => {
       params.resource_name = filters.resource_name
     }
 
+    // Add date range filter
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.start_time = dateRange.value[0].valueOf()
+      params.end_time = dateRange.value[1].valueOf()
+    }
+
     await callApi({
       method: 'get',
       url: '/api/v1/audit',
@@ -247,6 +271,20 @@ const fetchAudits = async () => {
 const handleSearch = () => {
   currentPage.value = 1
   fetchAudits()
+}
+
+const handleReset = () => {
+  filters.username = ''
+  filters.action = undefined
+  filters.resource_type = undefined
+  filters.resource_name = ''
+  dateRange.value = []
+  currentPage.value = 1
+  fetchAudits()
+}
+
+const handleDateRangeChange = () => {
+  handleSearch()
 }
 
 const handlePageChange = (page, size) => {
@@ -333,3 +371,19 @@ const showDetails = (record) => {
   detailsModalVisible.value = true
 }
 </script>
+
+<style scoped>
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+</style>

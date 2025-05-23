@@ -7,8 +7,6 @@ from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 
 
-
-
 class OpenApiEndpoint(BaseModel):
     """
     OpenAPI endpoint information.
@@ -20,10 +18,13 @@ class OpenApiEndpoint(BaseModel):
         description: Generated tool description
         parameters: JSON Schema of endpoint parameters
     """
+
     path: str = Field(description="Endpoint path")
     method: str = Field(description="HTTP method")
     tool: str = Field(description="Generated tool name")
-    description: Optional[str] = Field(default=None, description="Generated tool description")
+    description: Optional[str] = Field(
+        default=None, description="Generated tool description"
+    )
     parameters: Optional[Dict[str, Any]] = Field(
         default=None, description="JSON Schema of endpoint parameters"
     )

@@ -18,6 +18,7 @@ class LogFileInfo(BaseModel):
         modified_at: Modification time (UnixMS)
         modified_at_human: Human-readable modification time
     """
+
     name: str = Field(..., description="File name")
     path: str = Field(..., description="File path")
     size: int = Field(..., description="File size in bytes")
@@ -33,6 +34,7 @@ class LogFilesResponse(BaseModel):
     Attributes:
         files: List of log files
     """
+
     files: List[LogFileInfo] = Field(..., description="List of log files")
 
 
@@ -46,6 +48,7 @@ class LogContentResponse(BaseModel):
         total_lines: Total number of lines in the file
         displayed_lines: Number of lines displayed
     """
+
     file_name: str = Field(..., description="Log file name")
     content: str = Field(..., description="Log content")
     total_lines: int = Field(..., description="Total number of lines in the file")

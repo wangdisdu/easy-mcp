@@ -25,9 +25,9 @@ router = APIRouter(prefix="/tool-openapi", tags=["tool-openapi"])
 
 @router.post("/analyze", response_model=Response[OpenApi])
 async def analyze_openapi(
-        file: UploadFile = File(...),
-        db: AsyncSession = Depends(get_db),
-        current_user: TbUser = Depends(get_current_user),
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
 ):
     """
     Analyze OpenAPI file.
@@ -52,9 +52,9 @@ async def analyze_openapi(
 
 @router.post("/import", response_model=Response[List[ToolResponse]])
 async def import_openapi(
-        import_data: OpenApi,
-        db: AsyncSession = Depends(get_db),
-        current_user: TbUser = Depends(get_current_user),
+    import_data: OpenApi,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
 ):
     """
     Import OpenAPI tools.

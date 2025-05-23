@@ -14,6 +14,9 @@ from api.config import get_config, setup_logging
 from api.database import create_db_and_tables, get_session
 from api.middleware.error_middleware import ServiceErrorMiddleware
 from api.middleware.request_id_middleware import RequestIdMiddleware
+
+# Import models to ensure they are registered with SQLModel
+from api.models.tb_tool_log import TbToolLog
 from api.routers import (
     auth_router,
     user_router,
@@ -22,6 +25,7 @@ from api.routers import (
     config_router,
     audit_router,
     log_router,
+    tool_log_router,
     mcp_router,
     static_router,
     openapi_router,
@@ -100,6 +104,7 @@ app.include_router(func_router.router, prefix="/api/v1")
 app.include_router(config_router.router, prefix="/api/v1")
 app.include_router(audit_router.router, prefix="/api/v1")
 app.include_router(log_router.router, prefix="/api/v1")
+app.include_router(tool_log_router.router)
 app.include_router(openapi_router.router, prefix="/api/v1")
 
 # Add MCP router

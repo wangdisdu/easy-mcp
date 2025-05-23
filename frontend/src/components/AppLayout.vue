@@ -50,6 +50,11 @@
           <span>用户管理</span>
           <router-link to="/user" />
         </a-menu-item>
+        <a-menu-item key="tool-log">
+          <template #icon><FileSearchOutlined /></template>
+          <span>工具日志</span>
+          <router-link to="/tool-log" />
+        </a-menu-item>
         <a-menu-item key="audit">
           <template #icon><FileSearchOutlined /></template>
           <span>审计日志</span>

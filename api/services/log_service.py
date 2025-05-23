@@ -58,7 +58,9 @@ class LogService:
                         "size": stats.st_size,
                         "size_human": self._format_size(stats.st_size),
                         "modified_at": int(stats.st_mtime * 1000),  # Convert to UnixMS
-                        "modified_at_human": datetime.fromtimestamp(stats.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                        "modified_at_human": datetime.fromtimestamp(
+                            stats.st_mtime
+                        ).strftime("%Y-%m-%d %H:%M:%S"),
                     }
 
                     log_files.append(file_info)
@@ -71,7 +73,9 @@ class LogService:
 
         return log_files
 
-    def get_log_content(self, file_name: str, max_lines: int = 1000, tail: bool = True) -> Tuple[str, int]:
+    def get_log_content(
+        self, file_name: str, max_lines: int = 1000, tail: bool = True
+    ) -> Tuple[str, int]:
         """
         Get content of a log file.
 
@@ -95,7 +99,9 @@ class LogService:
 
             # Security check: ensure the file is within the logs directory
             if not str(file_path.resolve()).startswith(str(self.log_dir.resolve())):
-                logger.warning(f"Attempted to access file outside logs directory: {file_name}")
+                logger.warning(
+                    f"Attempted to access file outside logs directory: {file_name}"
+                )
                 return "Access denied: File is outside logs directory", 0
 
             # Read file content

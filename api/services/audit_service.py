@@ -4,7 +4,7 @@ Audit service.
 
 from typing import Optional, List, Tuple
 
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -73,12 +73,24 @@ class AuditService:
             query = query.where(TbAudit.created_at <= end_time)
 
         # Count total
-        count_result = await self.db.execute(
-            select(TbAudit.id).where(query.whereclause)
-            if query.whereclause
-            else select(TbAudit.id)
-        )
-        total = len(count_result.scalars().all())
+        count_query = select(func.count(TbAudit.id))
+
+        # Apply the same filters to count query
+        if username:
+            count_query = count_query.where(TbAudit.username.ilike(f"%{username}%"))
+        if action:
+            count_query = count_query.where(TbAudit.action == action)
+        if resource_type:
+            count_query = count_query.where(TbAudit.resource_type == resource_type)
+        if resource_name:
+            count_query = count_query.where(TbAudit.resource_name.ilike(f"%{resource_name}%"))
+        if start_time:
+            count_query = count_query.where(TbAudit.created_at >= start_time)
+        if end_time:
+            count_query = count_query.where(TbAudit.created_at <= end_time)
+
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar()
 
         # Apply pagination and ordering
         query = (

@@ -5,7 +5,7 @@ User service.
 import logging
 from typing import List, Optional, Tuple
 
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -88,8 +88,19 @@ class UserService:
             )
 
         # Count total
-        count_result = await self.db.execute(select(TbUser.id).where(query.whereclause))
-        total = len(count_result.scalars().all())
+        count_query = select(func.count(TbUser.id))
+
+        # Apply the same filters to count query
+        if search:
+            count_query = count_query.where(
+                or_(
+                    TbUser.username.ilike(f"%{search}%"),
+                    TbUser.email.ilike(f"%{search}%"),
+                )
+            )
+
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar()
 
         # Apply pagination
         query = query.offset((page - 1) * size).limit(size)

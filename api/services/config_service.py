@@ -6,7 +6,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import desc, or_
+from sqlalchemy import desc, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -93,12 +93,19 @@ class ConfigService:
             )
 
         # Count total
-        count_result = await self.db.execute(
-            select(TbConfig.id).where(query.whereclause)
-            if query.whereclause
-            else select(TbConfig.id)
-        )
-        total = len(count_result.scalars().all())
+        count_query = select(func.count(TbConfig.id))
+
+        # Apply the same filters to count query
+        if search:
+            count_query = count_query.where(
+                or_(
+                    TbConfig.name.ilike(f"%{search}%"),
+                    TbConfig.description.ilike(f"%{search}%"),
+                )
+            )
+
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar()
 
         # Apply pagination and ordering
         query = query.order_by(desc(TbConfig.id)).offset((page - 1) * size).limit(size)
@@ -232,7 +239,9 @@ class ConfigService:
         # Get configuration
         config = await self.get_config_by_id(config_id)
         if not config:
-            logger.error(f"Configuration not found for value update operation: {config_id}")
+            logger.error(
+                f"Configuration not found for value update operation: {config_id}"
+            )
             raise ConfigNotFoundError(config_id=config_id)
 
         # Update configuration value

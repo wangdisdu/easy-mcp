@@ -5,7 +5,7 @@ Function service.
 import logging
 from typing import List, Optional, Tuple
 
-from sqlalchemy import desc, or_
+from sqlalchemy import desc, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -93,12 +93,19 @@ class FuncService:
             )
 
         # Count total
-        count_result = await self.db.execute(
-            select(TbFunc.id).where(query.whereclause)
-            if query.whereclause
-            else select(TbFunc.id)
-        )
-        total = len(count_result.scalars().all())
+        count_query = select(func.count(TbFunc.id))
+
+        # Apply the same filters to count query
+        if search:
+            count_query = count_query.where(
+                or_(
+                    TbFunc.name.ilike(f"%{search}%"),
+                    TbFunc.description.ilike(f"%{search}%"),
+                )
+            )
+
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar()
 
         # Apply pagination and ordering
         query = query.order_by(desc(TbFunc.id)).offset((page - 1) * size).limit(size)

@@ -51,8 +51,13 @@ async def get_log_files(
 @router.get("/content/{file_name}", response_model=Response[LogContentResponse])
 async def get_log_content(
     file_name: str,
-    max_lines: int = Query(1000, ge=1, le=10000, description="Maximum number of lines to return"),
-    tail: bool = Query(True, description="If True, returns the last max_lines, otherwise returns from the beginning"),
+    max_lines: int = Query(
+        1000, ge=1, le=10000, description="Maximum number of lines to return"
+    ),
+    tail: bool = Query(
+        True,
+        description="If True, returns the last max_lines, otherwise returns from the beginning",
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: TbUser = Depends(get_current_user),
 ):
@@ -75,7 +80,9 @@ async def get_log_content(
     content, total_lines = log_service.get_log_content(file_name, max_lines, tail)
 
     # Calculate displayed lines
-    displayed_lines = content.count('\n') + (1 if content and not content.endswith('\n') else 0)
+    displayed_lines = content.count("\n") + (
+        1 if content and not content.endswith("\n") else 0
+    )
 
     return Response(
         data=LogContentResponse(

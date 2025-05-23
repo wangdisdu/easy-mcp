@@ -156,7 +156,9 @@ def audit(operation_type: str, object_type: str) -> Callable[[F], F]:
                     request = param_value
                 elif param_name.endswith("_id") and isinstance(param_value, int):
                     resource_id = param_value
-                elif param_name in ["name", "username"] and isinstance(param_value, str):
+                elif param_name in ["name", "username"] and isinstance(
+                    param_value, str
+                ):
                     resource_name = param_value
                 elif param_name.endswith("_data") and param_value is not None:
                     # 从数据对象中提取信息
@@ -170,18 +172,23 @@ def audit(operation_type: str, object_type: str) -> Callable[[F], F]:
                         # 使用辅助函数将对象转换为可序列化的形式
                         data_params[param_name] = _json_serializable(param_value)
                     except Exception as e:
-                        logger.debug(f"Could not convert {param_name} to serializable format: {str(e)}")
+                        logger.debug(
+                            f"Could not convert {param_name} to serializable format: {str(e)}"
+                        )
 
             audit_db = None
 
             try:
                 # 获取数据库连接
                 from api.database import get_db
+
                 try:
                     db_gen = get_db()
                     audit_db = await anext(db_gen)
                 except Exception as db_error:
-                    logger.error(f"Error creating database connection for audit: {str(db_error)}")
+                    logger.error(
+                        f"Error creating database connection for audit: {str(db_error)}"
+                    )
 
                 # 执行原始函数
                 result = await func(*args, **kwargs)

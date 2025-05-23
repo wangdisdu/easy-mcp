@@ -100,7 +100,7 @@
             v-model:open="versionCodeVisible"
             :title="`函数代码 (v${selectedVersion})`"
             width="800px"
-            footer="{null}"
+            :footer="null"
           >
             <pre class="code-display">{{ versionCode }}</pre>
           </a-modal>

@@ -108,7 +108,9 @@ class OpenApiService:
                             description += operation.get("description")
 
                         # 处理参数，生成 JSON Schema
-                        parameters_schema = self._process_parameters(operation, openapi_data, is_v3)
+                        parameters_schema = self._process_parameters(
+                            operation, openapi_data, is_v3
+                        )
 
                         apis.append(
                             OpenApiEndpoint(
@@ -133,10 +135,10 @@ class OpenApiService:
             raise ValueError(f"Invalid OpenAPI file: {str(e)}")
 
     async def import_openapi_tools(
-            self,
-            server: str,
-            apis: List[Dict[str, Any]],
-            current_user: Optional[str] = None,
+        self,
+        server: str,
+        apis: List[Dict[str, Any]],
+        current_user: Optional[str] = None,
     ) -> List[TbTool]:
         """
         Import OpenAPI endpoints as tools.
@@ -167,7 +169,10 @@ class OpenApiService:
                 path = api_data.path
                 tool_name = api_data.tool
                 tool_description = api_data.description or ""
-                parameters_schema = api_data.parameters or {"type": "object", "properties": {}}
+                parameters_schema = api_data.parameters or {
+                    "type": "object",
+                    "properties": {},
+                }
 
                 if not tool_name:
                     # 如果没有提供工具名称，则生成一个
@@ -217,7 +222,9 @@ class OpenApiService:
 
         return imported_tools
 
-    async def _ensure_call_open_api_func(self, current_user: Optional[str] = None) -> TbFunc:
+    async def _ensure_call_open_api_func(
+        self, current_user: Optional[str] = None
+    ) -> TbFunc:
         """
         Ensure the call_open_api function exists or create it.
 
@@ -321,17 +328,19 @@ def call_open_api(
             str: Normalized tool name (e.g., get_users_id_profile)
         """
         # 将所有非字母数字字符替换为下划线
-        encoded_path = re.sub(r'[^a-zA-Z0-9]', '_', path)
+        encoded_path = re.sub(r"[^a-zA-Z0-9]", "_", path)
 
         # 生成初始工具名
         tool_name = f"{method}_{encoded_path}"
 
         # 移除前后下划线并将连续下划线替换为单个下划线
-        tool_name = re.sub(r'_+', '_', tool_name).strip('_')
+        tool_name = re.sub(r"_+", "_", tool_name).strip("_")
 
         return tool_name
 
-    def _process_parameters(self, operation: Dict[str, Any], openapi_data: Dict[str, Any], is_v3: bool) -> Dict[str, Any]:
+    def _process_parameters(
+        self, operation: Dict[str, Any], openapi_data: Dict[str, Any], is_v3: bool
+    ) -> Dict[str, Any]:
         """
         Process API parameters and generate JSON Schema.
 
@@ -344,11 +353,7 @@ def call_open_api(
             Dict[str, Any]: JSON Schema of parameters
         """
         # 准备参数的 JSON Schema
-        parameters_schema = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        parameters_schema = {"type": "object", "properties": {}, "required": []}
 
         # 处理 API 参数
         parameters = operation.get("parameters", [])
@@ -382,7 +387,7 @@ def call_open_api(
                 param_info = {
                     "type": param_schema.get("type", "string"),
                     "description": f"{param_description}",
-                    "locations": [param_location]  # 使用 locations 数组
+                    "locations": [param_location],  # 使用 locations 数组
                 }
 
                 # 复制其他 schema 属性
@@ -407,7 +412,9 @@ def call_open_api(
 
                 # 确保 schema 包含 properties
                 if not isinstance(schema, dict) or "properties" not in schema:
-                    logger.warning(f"Body parameter schema does not contain properties: {schema}")
+                    logger.warning(
+                        f"Body parameter schema does not contain properties: {schema}"
+                    )
                     schema = {"properties": {}}
 
                 # 处理 body 参数中的每个属性
@@ -426,17 +433,21 @@ def call_open_api(
                             parameters_schema["properties"][prop_name] = {
                                 **prop_schema,
                                 "description": f"{prop_schema.get('description', '')}",
-                                "locations": ["body"]  # 使用 locations 数组
+                                "locations": ["body"],  # 使用 locations 数组
                             }
 
                         # 如果是必需参数
-                        if param.get("required", False) and prop_name in schema.get("required", []):
+                        if param.get("required", False) and prop_name in schema.get(
+                            "required", []
+                        ):
                             if prop_name not in parameters_schema["required"]:
                                 parameters_schema["required"].append(prop_name)
 
         # Process requestBody (OpenAPI v3)
         if is_v3 and "requestBody" in operation:
-            self._process_request_body(operation.get("requestBody", {}), parameters_schema, openapi_data)
+            self._process_request_body(
+                operation.get("requestBody", {}), parameters_schema, openapi_data
+            )
 
         # 如果没有必需参数，则不添加 required 字段
         if not parameters_schema["required"]:
@@ -445,11 +456,11 @@ def call_open_api(
         return parameters_schema
 
     def _generate_tool_code(
-            self,
-            method: str,
-            path: str,
-            parameters_schema: Dict[str, Any],
-            server: str,
+        self,
+        method: str,
+        path: str,
+        parameters_schema: Dict[str, Any],
+        server: str,
     ) -> str:
         """
         Generate tool code for OpenAPI endpoint.
@@ -496,18 +507,18 @@ body = {{}}
                 # 处理每个位置
                 for location in param_locations:
                     if location == "query":
-                        code += f'# 处理 query 参数: {param_name}\n'
+                        code += f"# 处理 query 参数: {param_name}\n"
                         code += f'if "{param_name}" in parameters:\n'
                         code += f'    query["{param_name}"] = parameters.get("{param_name}")\n\n'
 
                     elif location == "path":
                         # path 参数直接替换到 api_path 中
-                        code += f'# 处理 path 参数: {param_name}\n'
+                        code += f"# 处理 path 参数: {param_name}\n"
                         code += f'if "{param_name}" in parameters:\n'
                         code += f'    api_path = api_path.replace("{{{param_name}}}", str(parameters.get("{param_name}")))\n\n'
 
                     elif location == "body":
-                        code += f'# 处理 body 参数: {param_name}\n'
+                        code += f"# 处理 body 参数: {param_name}\n"
                         code += f'if "{param_name}" in parameters:\n'
                         code += f'    body["{param_name}"] = parameters.get("{param_name}")\n\n'
 
@@ -533,7 +544,12 @@ result = response
 """
         return code
 
-    def _process_request_body(self, req_body: Dict[str, Any], parameters_schema: Dict[str, Any], openapi_data: Dict[str, Any]) -> None:
+    def _process_request_body(
+        self,
+        req_body: Dict[str, Any],
+        parameters_schema: Dict[str, Any],
+        openapi_data: Dict[str, Any],
+    ) -> None:
         """
         Process request body (OpenAPI v3).
 
@@ -557,7 +573,9 @@ result = response
 
             # 确保 schema 包含 properties
             if not isinstance(schema, dict) or "properties" not in schema:
-                logger.warning(f"RequestBody schema does not contain properties: {schema}")
+                logger.warning(
+                    f"RequestBody schema does not contain properties: {schema}"
+                )
                 schema = {"properties": {}}
 
             # 处理 requestBody 中的每个属性
@@ -573,7 +591,9 @@ result = response
                             existing_param["locations"] = existing_locations
 
                         # 更新描述
-                        body_desc = f"Body parameter: {prop_schema.get('description', '')}"
+                        body_desc = (
+                            f"Body parameter: {prop_schema.get('description', '')}"
+                        )
                         if existing_param.get("description"):
                             existing_param["description"] += f"; {body_desc}"
                         else:
@@ -583,11 +603,13 @@ result = response
                         parameters_schema["properties"][prop_name] = {
                             **prop_schema,
                             "description": f"Body parameter: {prop_schema.get('description', '')}",
-                            "locations": ["body"]  # 使用 locations 数组
+                            "locations": ["body"],  # 使用 locations 数组
                         }
 
                     # 如果是必需参数
-                    if req_body.get("required", False) and prop_name in schema.get("required", []):
+                    if req_body.get("required", False) and prop_name in schema.get(
+                        "required", []
+                    ):
                         if prop_name not in parameters_schema["required"]:
                             parameters_schema["required"].append(prop_name)
 
@@ -622,7 +644,9 @@ result = response
             if part in current:
                 current = current[part]
             else:
-                logger.warning(f"Could not resolve reference part '{part}' in path '{ref_path}'")
+                logger.warning(
+                    f"Could not resolve reference part '{part}' in path '{ref_path}'"
+                )
                 return {}
 
         # Handle nested references

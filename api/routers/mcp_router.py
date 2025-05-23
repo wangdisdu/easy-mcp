@@ -149,12 +149,8 @@ class McpServerManager:
                         except json.JSONDecodeError:
                             result_dict = {"result": result_str}
 
-                    return [
-                        TextContent(
-                            type="text",
-                            text=json.dumps(result_dict, ensure_ascii=False),
-                        )
-                    ]
+                    response_text = json.dumps(result_dict, ensure_ascii=False)
+                    return [TextContent(type="text", text=response_text)]
                 except Exception as e:
                     logger.warning(f"将结果和日志组合为 JSON 时出错: {str(e)}")
 
@@ -198,7 +194,9 @@ class McpServerManager:
 
         # 执行工具
         try:
-            result, logs = await tool_service.execute_tool(tool.id, arguments)
+            result, logs = await tool_service.execute_tool(
+                tool.id, arguments, call_type="mcp"
+            )
             return result, logs
         except Exception as e:
             logger.error(f"执行工具 '{name}' 时发生错误: {str(e)}")

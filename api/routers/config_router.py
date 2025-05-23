@@ -189,7 +189,9 @@ async def update_config_value(
         Response[ConfigResponse]: Updated configuration
     """
     service = ConfigService(db)
-    config = await service.update_config_value(config_id, config_data.get("conf_value"), current_user.username)
+    config = await service.update_config_value(
+        config_id, config_data.get("conf_value"), current_user.username
+    )
 
     return Response(data=ConfigResponse.model_validate(config) if config else None)
 

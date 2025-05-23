@@ -295,7 +295,9 @@ async def debug_tool(
     service = ToolService(db)
 
     try:
-        result, logs = await service.execute_tool(tool_id, debug_data.parameters)
+        result, logs = await service.execute_tool(
+            tool_id, debug_data.parameters, call_type="debug"
+        )
         return Response(
             data=ToolDebugResponse(
                 result=result, logs=logs, success=True, error_message=None
