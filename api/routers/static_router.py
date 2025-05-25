@@ -34,8 +34,12 @@ async def serve_spa(request: Request, full_path: str):
     如果请求的路径是一个文件，则尝试从静态目录提供该文件
     否则返回 index.html 以支持客户端路由
     """
-    # 检查请求的路径是否是 API 路由
-    if request.url.path.startswith("/api/") or request.url.path.startswith("/sse"):
+    # 检查请求的路径是否是 API 路由或 FastAPI 内置路由
+    if (request.url.path.startswith("/api/") or
+        request.url.path.startswith("/sse") or
+        request.url.path.startswith("/docs") or
+        request.url.path.startswith("/redoc") or
+        request.url.path.startswith("/openapi.json")):
         return HTMLResponse(content="Not Found", status_code=404)
 
     # 构建完整的文件路径

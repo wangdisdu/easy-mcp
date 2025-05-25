@@ -96,7 +96,7 @@ app.add_middleware(ServiceErrorMiddleware)
 
 # Audit middleware has been removed - audit logs are now handled by the audit decorator
 
-# Add routers
+# Add API routers first (more specific routes)
 app.include_router(auth_router.router, prefix="/api/v1")
 app.include_router(user_router.router, prefix="/api/v1")
 app.include_router(tool_router.router, prefix="/api/v1")
@@ -104,18 +104,11 @@ app.include_router(func_router.router, prefix="/api/v1")
 app.include_router(config_router.router, prefix="/api/v1")
 app.include_router(audit_router.router, prefix="/api/v1")
 app.include_router(log_router.router, prefix="/api/v1")
-app.include_router(tool_log_router.router)
 app.include_router(openapi_router.router, prefix="/api/v1")
+app.include_router(tool_log_router.router)
 
 # Add MCP router
 app.include_router(mcp_router.router)
-
-# 挂载静态文件目录
-static_dir = Path("static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-# 包含静态文件路由器（支持 Vue 路由）
-app.include_router(static_router.router)
 
 
 @app.get("/api/v1/system")
@@ -136,6 +129,14 @@ async def root():
         RedirectResponse: Redirect to index.html
     """
     return RedirectResponse(url="/static/index.html")
+
+
+# 挂载静态文件目录
+static_dir = Path("static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# 包含静态文件路由器（支持 Vue 路由）- 必须在最后，因为它有通配符路由
+app.include_router(static_router.router)
 
 
 if __name__ == "__main__":
