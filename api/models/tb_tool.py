@@ -4,7 +4,7 @@ Tool model.
 
 from typing import Optional
 
-from sqlalchemy import Index
+from sqlalchemy import BigInteger, Index, Text
 from sqlmodel import Field, SQLModel
 
 
@@ -28,15 +28,15 @@ class TbTool(SQLModel, table=True):
 
     __tablename__ = "tb_tool"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     name: str = Field(unique=True, index=True)
-    description: Optional[str] = Field(default=None)
-    parameters: str = Field(default="{}")
-    code: str = Field()
+    description: Optional[str] = Field(default=None, sa_type=Text)
+    parameters: str = Field(default="{}", sa_type=Text)
+    code: str = Field(sa_type=Text)
     is_enabled: bool = Field(default=True)
     current_version: Optional[int] = Field(default=None)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)
 
@@ -60,14 +60,14 @@ class TbToolDeploy(SQLModel, table=True):
 
     __tablename__ = "tb_tool_deploy"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     tool_id: int = Field(index=True)
     version: int = Field()
-    parameters: str = Field(default="{}")
-    code: str = Field()
-    description: Optional[str] = Field(default=None)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    parameters: str = Field(default="{}", sa_type=Text)
+    code: str = Field(sa_type=Text)
+    description: Optional[str] = Field(default=None, sa_type=Text)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)
 
@@ -92,11 +92,11 @@ class TbToolFunc(SQLModel, table=True):
 
     __tablename__ = "tb_tool_func"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     tool_id: int = Field(index=True)
     func_id: int = Field(index=True)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)
 
@@ -121,11 +121,11 @@ class TbToolConfig(SQLModel, table=True):
 
     __tablename__ = "tb_tool_config"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     tool_id: int = Field(index=True)
     config_id: int = Field(index=True)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)
 
@@ -134,3 +134,42 @@ class TbToolConfig(SQLModel, table=True):
             "ix_tb_tool_config_tool_id_config_id", "tool_id", "config_id", unique=True
         ),
     )
+
+
+class TbToolLog(SQLModel, table=True):
+    """
+    Tool log table model.
+
+    Attributes:
+        id: Log ID
+        tool_name: Tool name
+        tool_id: Tool ID
+        call_type: Call type (mcp, debug)
+        request_time: Request time (Unix seconds)
+        response_time: Response time (Unix seconds)
+        duration_ms: Duration in milliseconds
+        is_success: Whether the call was successful
+        error_message: Error message if failed
+        request_params: Request parameters (JSON string)
+        response_data: Response data (JSON string)
+        ip_address: Client IP address
+        user_agent: Client user agent
+        created_at: Creation time (UnixMS)
+    """
+
+    __tablename__ = "tb_tool_log"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    tool_name: str = Field(index=True)
+    tool_id: Optional[int] = Field(default=None, index=True)
+    call_type: str = Field(index=True)  # mcp, debug
+    request_time: int = Field(index=True, sa_type=BigInteger)
+    response_time: Optional[int] = Field(default=None, sa_type=BigInteger)
+    duration_ms: Optional[int] = Field(default=None, index=True)
+    is_success: bool = Field(default=False, index=True)
+    error_message: Optional[str] = Field(default=None)
+    request_params: Optional[str] = Field(default=None)
+    response_data: Optional[str] = Field(default=None)
+    ip_address: Optional[str] = Field(default=None)
+    user_agent: Optional[str] = Field(default=None)
+    created_at: int = Field(index=True, sa_type=BigInteger)

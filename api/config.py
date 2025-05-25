@@ -38,20 +38,6 @@ class JWTConfig(BaseModel):
     access_token_expire_minutes: int = 60 * 24  # 1 day
 
 
-class ToolExecutionConfig(BaseModel):
-    """Tool execution configuration."""
-
-    timeout: int = 30  # seconds
-    max_memory: int = 512  # MB
-
-
-class ServerConfig(BaseModel):
-    """Server configuration."""
-
-    host: str = "0.0.0.0"
-    port: int = 8000
-
-
 class AdminUserConfig(BaseModel):
     """Admin user configuration."""
 
@@ -64,7 +50,7 @@ class AppConfig(BaseModel):
     """Application configuration."""
 
     debug: bool = False
-    title: str = Field(default="Easy MCP API")
+    title: str = Field(default="Easy MCP")
     version: str = Field(default="0.1.0")
     description: str = Field(default="Dynamic MCP tool registration server")
     database: DatabaseConfig
@@ -72,9 +58,7 @@ class AppConfig(BaseModel):
     cors_origins: List[str] = Field(default=["*"])
     log_level: str = Field(default="INFO")
     log_config_path: Optional[str] = Field(default=None)
-    server: ServerConfig = Field(default_factory=ServerConfig)
     admin_user: AdminUserConfig = Field(default_factory=AdminUserConfig)
-    tool_execution: ToolExecutionConfig = Field(default_factory=ToolExecutionConfig)
 
 
 def get_config() -> AppConfig:
@@ -97,7 +81,7 @@ def get_config() -> AppConfig:
     db_echo = os.getenv("DB_ECHO", "False").lower() == "true"
 
     # JWT configuration
-    jwt_secret = os.getenv("JWT_SECRET_KEY", "easy_mcp")
+    jwt_secret = os.getenv("JWT_SECRET_KEY", "easy_mcp_secret")
     jwt_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     jwt_expire = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 1 day
 
@@ -106,9 +90,7 @@ def get_config() -> AppConfig:
 
     # Logging configuration
     log_level = os.getenv("LOG_LEVEL", "INFO")
-    log_config_path = os.getenv("LOG_CONFIG_PATH", None)
-    if log_config_path == "":
-        log_config_path = None
+    log_config_path = os.getenv("LOG_CONFIG_PATH", "api/logging.ini")
 
     # Server configuration
     server_host = os.getenv("HOST", "0.0.0.0")
@@ -137,12 +119,8 @@ def get_config() -> AppConfig:
         cors_origins=cors_origins,
         log_level=log_level,
         log_config_path=log_config_path,
-        server=ServerConfig(host=server_host, port=server_port),
         admin_user=AdminUserConfig(
             username=admin_username, password=admin_password, email=admin_email
-        ),
-        tool_execution=ToolExecutionConfig(
-            timeout=tool_timeout, max_memory=tool_max_memory
         ),
     )
 

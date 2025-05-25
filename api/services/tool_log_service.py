@@ -11,7 +11,7 @@ from sqlalchemy import desc, func, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from api.models.tb_tool_log import TbToolLog
+from api.models.tb_tool import TbToolLog
 from api.schemas.tool_log_schema import (
     ToolStatsResponse,
     ToolTrendResponse,

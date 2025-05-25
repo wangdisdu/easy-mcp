@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  easy-mcp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: easy-mcp-sqlite
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data:/app/data
+      - ../logs:/app/logs
+    environment:
+      - DB_URL=sqlite+aiosqlite:///./data/easy_mcp.db
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=8000
+      - JWT_SECRET_KEY=easy_mcp_secret
+      - CORS_ORIGINS=*
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - ADMIN_EMAIL=admin@example.com
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - easy-mcp-network
+
+networks:
+  easy-mcp-network:
+    driver: bridge
+
+volumes:
+  easy-mcp-data:
+    driver: local

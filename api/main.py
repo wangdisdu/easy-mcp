@@ -5,6 +5,7 @@ Main application module.
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -16,7 +17,6 @@ from api.middleware.error_middleware import ServiceErrorMiddleware
 from api.middleware.request_id_middleware import RequestIdMiddleware
 
 # Import models to ensure they are registered with SQLModel
-from api.models.tb_tool_log import TbToolLog
 from api.routers import (
     auth_router,
     user_router,
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "api.main:app",
-        host=config.server.host,
-        port=config.server.port,
+        host="0.0.0.0",
+        port=8000,
         reload=config.debug,
     )

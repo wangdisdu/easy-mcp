@@ -5,7 +5,7 @@ Common schemas.
 import time
 from typing import Generic, TypeVar, List, Optional, Dict, Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 # Type variable for generic models
 T = TypeVar("T")

@@ -7,9 +7,10 @@ import inspect
 import json
 import logging
 from datetime import datetime
-from typing import Optional, Any, Callable, TypeVar, Awaitable, cast, Dict, List, Union
+from typing import Optional, Any, Callable, TypeVar, Awaitable, cast, Dict
 
 from fastapi import Request
+
 from api.models.tb_audit import TbAudit
 from api.utils.time_util import get_current_unix_ms
 

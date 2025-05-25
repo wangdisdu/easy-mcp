@@ -83,7 +83,9 @@ class AuditService:
         if resource_type:
             count_query = count_query.where(TbAudit.resource_type == resource_type)
         if resource_name:
-            count_query = count_query.where(TbAudit.resource_name.ilike(f"%{resource_name}%"))
+            count_query = count_query.where(
+                TbAudit.resource_name.ilike(f"%{resource_name}%")
+            )
         if start_time:
             count_query = count_query.where(TbAudit.created_at >= start_time)
         if end_time:

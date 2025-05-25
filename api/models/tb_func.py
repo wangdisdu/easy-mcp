@@ -4,7 +4,7 @@ Function model.
 
 from typing import Optional
 
-from sqlalchemy import Index
+from sqlalchemy import BigInteger, Index, Text
 from sqlmodel import Field, SQLModel
 
 
@@ -26,13 +26,13 @@ class TbFunc(SQLModel, table=True):
 
     __tablename__ = "tb_func"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     name: str = Field(unique=True, index=True)
-    description: Optional[str] = Field(default=None)
-    code: str = Field()
+    description: Optional[str] = Field(default=None, sa_type=Text)
+    code: str = Field(sa_type=Text)
     current_version: Optional[int] = Field(default=None)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)
 
@@ -55,13 +55,13 @@ class TbFuncDeploy(SQLModel, table=True):
 
     __tablename__ = "tb_func_deploy"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     func_id: int = Field(index=True)
     version: int = Field()
-    code: str = Field()
-    description: Optional[str] = Field(default=None)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    code: str = Field(sa_type=Text)
+    description: Optional[str] = Field(default=None, sa_type=Text)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)
 
@@ -86,11 +86,11 @@ class TbFuncDepends(SQLModel, table=True):
 
     __tablename__ = "tb_func_depends"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     func_id: int = Field(index=True)
     depends_on_func_id: int = Field(index=True)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)
 

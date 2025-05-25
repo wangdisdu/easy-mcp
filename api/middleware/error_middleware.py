@@ -10,12 +10,11 @@ from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from api.errors.base_error import ServiceError
 from api.config import get_config
+from api.errors.base_error import ServiceError
 
 # Create logger
 logger = logging.getLogger(__name__)
-
 
 # Get configuration
 config = get_config()

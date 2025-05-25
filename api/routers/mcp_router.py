@@ -18,9 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.database import get_db
 from api.errors.mcp_error import McpMessageHandlingError, McpToolExecutionError
 from api.errors.tool_error import ToolNotFoundError
-from api.services.func_service import FuncService
 from api.services.tool_service import ToolService
-
 
 # Create logger
 logger = logging.getLogger(__name__)

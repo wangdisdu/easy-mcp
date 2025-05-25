@@ -3,6 +3,7 @@ Configuration-related error classes.
 """
 
 from typing import Optional, Dict, Any
+
 from api.errors.base_error import ServiceError
 
 

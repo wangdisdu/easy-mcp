@@ -4,6 +4,7 @@ Configuration model.
 
 from typing import Optional
 
+from sqlalchemy import BigInteger, Text
 from sqlmodel import Field, SQLModel
 
 
@@ -25,12 +26,12 @@ class TbConfig(SQLModel, table=True):
 
     __tablename__ = "tb_config"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     name: str = Field(unique=True, index=True)
-    description: Optional[str] = Field(default=None)
-    conf_schema: str = Field(default="{}")
-    conf_value: Optional[str] = Field(default=None)
-    created_at: Optional[int] = Field(default=None)
-    updated_at: Optional[int] = Field(default=None)
+    description: Optional[str] = Field(default=None, sa_type=Text)
+    conf_schema: str = Field(default="{}", sa_type=Text)
+    conf_value: Optional[str] = Field(default=None, sa_type=Text)
+    created_at: Optional[int] = Field(default=None, sa_type=BigInteger)
+    updated_at: Optional[int] = Field(default=None, sa_type=BigInteger)
     created_by: Optional[str] = Field(default=None)
     updated_by: Optional[str] = Field(default=None)

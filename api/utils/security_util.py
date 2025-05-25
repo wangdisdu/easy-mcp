@@ -1,19 +1,18 @@
 """
 Security utility functions.
 """
-
+import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from fastapi import Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from api.config import get_config, AppConfig
+from api.config import get_config
 from api.database import get_db
 from api.errors.user_error import InvalidCredentialsError
 from api.models.tb_user import TbUser
@@ -26,11 +25,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = config.jwt.access_token_expire_minutes
 ADMIN_USERNAME = config.admin_user.username
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated=["auto"])
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
+# Get logger
+logger = logging.getLogger(__name__)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
@@ -104,9 +105,11 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> T
     user = result.scalars().first()
 
     if not user:
+        logger.warning(f"User '{username}' not found")
         raise InvalidCredentialsError()
 
     if not verify_password(password, user.password):
+        logger.warning(f"Invalid password for user '{username}'")
         raise InvalidCredentialsError()
 
     return user

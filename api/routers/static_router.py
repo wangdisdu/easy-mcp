@@ -4,7 +4,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse
-from starlette.staticfiles import StaticFiles
 
 # 获取日志记录器
 logger = logging.getLogger(__name__)

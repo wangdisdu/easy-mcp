@@ -4,6 +4,7 @@ Audit log model.
 
 from typing import Optional
 
+from sqlalchemy import BigInteger, Text
 from sqlmodel import Field, SQLModel
 
 
@@ -26,13 +27,13 @@ class TbAudit(SQLModel, table=True):
 
     __tablename__ = "tb_audit"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(primary_key=True)
     user_id: Optional[int] = Field(default=None, index=True)
     username: str = Field(index=True)
     action: str = Field(index=True)
     resource_type: str = Field(index=True)
     resource_id: Optional[int] = Field(default=None, index=True)
     resource_name: Optional[str] = Field(default=None, index=True)
-    details: Optional[str] = Field(default=None)
+    details: Optional[str] = Field(default=None, sa_type=Text)
     ip_address: Optional[str] = Field(default=None)
-    created_at: int = Field(index=True)
+    created_at: int = Field(index=True, sa_type=BigInteger)

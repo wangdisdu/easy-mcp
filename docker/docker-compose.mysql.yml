@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: easy-mcp-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: easy_mcp
+      MYSQL_USER: easy_mcp
+      MYSQL_PASSWORD: easy_mcp_password
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../scripts/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "easy_mcp", "-peasy_mcp_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - easy-mcp-network
+
+  easy-mcp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: easy-mcp-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../logs:/app/logs
+    environment:
+      - DB_URL=mysql+aiomysql://easy_mcp:easy_mcp_password@mysql:3306/easy_mcp?charset=utf8mb4
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=8000
+      - JWT_SECRET_KEY=easy_mcp_secret
+      - CORS_ORIGINS=*
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - ADMIN_EMAIL=admin@example.com
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - easy-mcp-network
+
+networks:
+  easy-mcp-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local

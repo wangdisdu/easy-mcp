@@ -2,7 +2,6 @@
 Log service for managing system logs.
 """
 
-import os
 import logging
 from datetime import datetime
 from pathlib import Path

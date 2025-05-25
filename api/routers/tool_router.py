@@ -2,7 +2,7 @@
 Tool router.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +22,6 @@ from api.schemas.tool_schema import (
     ToolDeployResponse,
     ToolResponse,
     ToolUpdate,
-    BuiltinToolInfo,
 )
 from api.services.tool_service import ToolService
 from api.utils.security_util import get_current_user

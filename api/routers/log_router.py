@@ -2,16 +2,14 @@
 Log router.
 """
 
-from typing import Optional
-from fastapi import APIRouter, Depends, Query, HTTPException, Response
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.config import get_config
 from api.database import get_db
 from api.models.tb_user import TbUser
-from api.schemas.log_schema import LogFilesResponse, LogContentResponse
 from api.schemas.common_schema import Response
+from api.schemas.log_schema import LogFilesResponse, LogContentResponse
 from api.services.log_service import LogService
 from api.utils.security_util import get_current_user
 
