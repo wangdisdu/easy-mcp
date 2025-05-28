@@ -16,6 +16,7 @@ load_dotenv()
 
 # Base directory of the application
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
 
 
 class DatabaseConfig(BaseModel):
@@ -58,6 +59,7 @@ class AppConfig(BaseModel):
     cors_origins: List[str] = Field(default=["*"])
     log_level: str = Field(default="INFO")
     log_config_path: Optional[str] = Field(default=None)
+    static_dir: str = Field(default="static")
     admin_user: AdminUserConfig = Field(default_factory=AdminUserConfig)
 
 
@@ -90,20 +92,17 @@ def get_config() -> AppConfig:
 
     # Logging configuration
     log_level = os.getenv("LOG_LEVEL", "INFO")
-    log_config_path = os.getenv("LOG_CONFIG_PATH", "api/logging.ini")
 
-    # Server configuration
-    server_host = os.getenv("HOST", "0.0.0.0")
-    server_port = int(os.getenv("PORT", "8000"))
+    default_log_config_path = os.path.join(BASE_DIR, "logging.ini")
+    log_config_path = os.getenv("LOG_CONFIG_PATH", default_log_config_path)
+
+    default_static_dir = os.path.join(ROOT_DIR, "static")
+    static_dir = os.getenv("STATIC_DIR", default_static_dir)
 
     # Admin user configuration
     admin_username = os.getenv("ADMIN_USERNAME", "admin")
     admin_password = os.getenv("ADMIN_PASSWORD", "admin")
     admin_email = os.getenv("ADMIN_EMAIL", "admin@example.com")
-
-    # Tool execution configuration
-    tool_timeout = int(os.getenv("TOOL_EXECUTION_TIMEOUT", "30"))
-    tool_max_memory = int(os.getenv("TOOL_MAX_MEMORY", "512"))
 
     return AppConfig(
         debug=debug,
@@ -119,6 +118,7 @@ def get_config() -> AppConfig:
         cors_origins=cors_origins,
         log_level=log_level,
         log_config_path=log_config_path,
+        static_dir=static_dir,
         admin_user=AdminUserConfig(
             username=admin_username, password=admin_password, email=admin_email
         ),

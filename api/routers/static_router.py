@@ -5,11 +5,16 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse
 
+from api.config import get_config
+
 # 获取日志记录器
 logger = logging.getLogger(__name__)
 
+# 获取配置
+config = get_config()
+
 # 获取静态文件目录路径
-static_dir = Path("static")
+static_dir = Path(config.static_dir)
 index_html_path = static_dir / "index.html"
 
 # 创建路由器
@@ -35,11 +40,13 @@ async def serve_spa(request: Request, full_path: str):
     否则返回 index.html 以支持客户端路由
     """
     # 检查请求的路径是否是 API 路由或 FastAPI 内置路由
-    if (request.url.path.startswith("/api/") or
-        request.url.path.startswith("/sse") or
-        request.url.path.startswith("/docs") or
-        request.url.path.startswith("/redoc") or
-        request.url.path.startswith("/openapi.json")):
+    if (
+        request.url.path.startswith("/api/")
+        or request.url.path.startswith("/sse")
+        or request.url.path.startswith("/docs")
+        or request.url.path.startswith("/redoc")
+        or request.url.path.startswith("/openapi.json")
+    ):
         return HTMLResponse(content="Not Found", status_code=404)
 
     # 构建完整的文件路径

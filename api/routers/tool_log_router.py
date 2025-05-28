@@ -20,7 +20,7 @@ from api.services.tool_log_service import ToolLogService
 from api.utils.security_util import get_current_user
 
 # Create router
-router = APIRouter(prefix="/api/v1/tool-log", tags=["tool-log"])
+router = APIRouter(prefix="/tool-log", tags=["tool-log"])
 
 
 @router.get("", response_model=PaginatedResponse[ToolLogResponse])

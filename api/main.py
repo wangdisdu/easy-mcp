@@ -8,7 +8,6 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.config import get_config, setup_logging
@@ -105,7 +104,7 @@ app.include_router(config_router.router, prefix="/api/v1")
 app.include_router(audit_router.router, prefix="/api/v1")
 app.include_router(log_router.router, prefix="/api/v1")
 app.include_router(openapi_router.router, prefix="/api/v1")
-app.include_router(tool_log_router.router)
+app.include_router(tool_log_router.router, prefix="/api/v1")
 
 # Add MCP router
 app.include_router(mcp_router.router)
@@ -121,23 +120,12 @@ async def system():
     return {"message": "Welcome to Easy MCP API"}
 
 
-@app.get("/")
-async def root():
-    """Root endpoint.
-
-    Returns:
-        RedirectResponse: Redirect to index.html
-    """
-    return RedirectResponse(url="/static/index.html")
-
-
 # 挂载静态文件目录
-static_dir = Path("static")
+static_dir = Path(config.static_dir)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # 包含静态文件路由器（支持 Vue 路由）- 必须在最后，因为它有通配符路由
 app.include_router(static_router.router)
-
 
 if __name__ == "__main__":
     import uvicorn
