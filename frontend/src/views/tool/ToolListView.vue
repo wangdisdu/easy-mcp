@@ -10,10 +10,25 @@
         />
 
         <div>
-          <a-button type="primary" style="margin-right: 8px" @click="router.push('/tool/create')">
-            <template #icon><PlusOutlined /></template>
-            创建工具
-          </a-button>
+          <a-dropdown>
+            <a-button type="primary" style="margin-right: 8px">
+              <template #icon><PlusOutlined /></template>
+              创建工具
+              <DownOutlined />
+            </a-button>
+            <template #overlay>
+              <a-menu>
+                <a-menu-item key="basic" @click="router.push('/tool/create?type=basic')">
+                  <ToolOutlined />
+                  基础工具
+                </a-menu-item>
+                <a-menu-item key="http" @click="router.push('/tool/create?type=http')">
+                  <GlobalOutlined />
+                  HTTP工具
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
           <a-dropdown>
             <a-button>
               <template #icon><ImportOutlined /></template>
@@ -61,6 +76,13 @@
           <!-- 描述列 -->
           <template v-else-if="column.key === 'description'">
             <span>{{ record.description || '无描述' }}</span>
+          </template>
+
+          <!-- 类型列 -->
+          <template v-else-if="column.key === 'type'">
+            <a-tag :color="record.type === 'http' ? 'blue' : 'green'">
+              {{ record.type === 'http' ? 'HTTP工具' : '基础工具' }}
+            </a-tag>
           </template>
 
           <!-- 状态列 -->
@@ -147,9 +169,11 @@ import {
   PlayCircleOutlined,
   PauseCircleOutlined,
   ImportOutlined,
-  DownOutlined,
   ApiOutlined,
-  CloudOutlined
+  DownOutlined,
+  ToolOutlined,
+  CloudOutlined,
+  GlobalOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp } from '../../utils/api-util'
@@ -183,11 +207,15 @@ const columns = [
     tooltip: true
   },
   {
+    title: '类型',
+    dataIndex: 'type',
+    key: 'type',
+    width: 100
+  },
+  {
     title: '状态',
     key: 'status',
-    width: 100,
-    ellipsis: true,
-    tooltip: true
+    width: 100
   },
   {
     title: '版本',

@@ -16,6 +16,8 @@ class TbTool(SQLModel, table=True):
         id: Tool ID
         name: Tool name
         description: Tool description
+        type: Tool type (basic or http)
+        setting: Advanced settings (JSON string)
         parameters: Tool parameters (JSON Schema)
         code: Tool implementation code
         is_enabled: Whether the tool is enabled
@@ -31,6 +33,8 @@ class TbTool(SQLModel, table=True):
     id: int = Field(primary_key=True)
     name: str = Field(unique=True, index=True)
     description: Optional[str] = Field(default=None, sa_type=Text)
+    type: str = Field(default="basic")
+    setting: str = Field(default="{}", sa_type=Text)
     parameters: str = Field(default="{}", sa_type=Text)
     code: str = Field(sa_type=Text)
     is_enabled: bool = Field(default=True)
@@ -49,6 +53,8 @@ class TbToolDeploy(SQLModel, table=True):
         id: Deployment record ID
         tool_id: Tool ID
         version: Version number
+        type: Tool type (basic or http)
+        setting: Advanced settings (JSON string)
         parameters: Tool parameters (JSON Schema)
         code: Tool implementation code
         description: Version description
@@ -63,6 +69,8 @@ class TbToolDeploy(SQLModel, table=True):
     id: int = Field(primary_key=True)
     tool_id: int = Field(index=True)
     version: int = Field()
+    type: str = Field(default="basic")
+    setting: str = Field(default="{}", sa_type=Text)
     parameters: str = Field(default="{}", sa_type=Text)
     code: str = Field(sa_type=Text)
     description: Optional[str] = Field(default=None, sa_type=Text)

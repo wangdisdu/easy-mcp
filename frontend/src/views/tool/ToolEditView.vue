@@ -33,7 +33,57 @@
           <a-textarea v-model:value="formState.description" placeholder="请输入工具描述" :rows="3" />
         </a-form-item>
 
-        <!-- 第三行：依赖函数和绑定配置 -->
+        <!-- HTTP工具特有字段 -->
+        <template v-if="formState.type === 'http'">
+          <a-form-item label="请求地址" required>
+            <a-input v-model:value="formState.setting.url" placeholder="请输入HTTP请求地址，支持参数变量占位符，如：http://localhost:80/user/{id}?format={format}" />
+          </a-form-item>
+
+          <a-form-item 
+            label="请求Header" 
+            :label-col="{ span: 24 }"
+            :wrapper-col="{ span: 24 }"
+            class="header-form-item"
+          >
+            <div class="header-row">
+              <a-button type="primary" size="small" @click="addHeader">
+                <template #icon><PlusOutlined /></template>
+                添加请求头
+              </a-button>
+            </div>
+            <a-table
+              :columns="headerColumns"
+              :data-source="formState.setting.headers"
+              :pagination="false"
+              size="small"
+            >
+              <template #bodyCell="{ column, record, index }">
+                <template v-if="column.key === 'key'">
+                  <a-input
+                    :default-value="record.key"
+                    @blur="(e) => handleHeaderChange(index, 'key', e.target.value)"
+                    placeholder="请输入Header Key"
+                  />
+                </template>
+                <template v-if="column.key === 'value'">
+                  <a-input
+                    :default-value="record.value"
+                    @blur="(e) => handleHeaderChange(index, 'value', e.target.value)"
+                    placeholder="请输入Header Value"
+                  />
+                </template>
+                <template v-if="column.key === 'action'">
+                  <a-button type="link" size="small" danger @click="removeHeader(index)">
+                    <template #icon><DeleteOutlined /></template>
+                    删除
+                  </a-button>
+                </template>
+              </template>
+            </a-table>
+          </a-form-item>
+        </template>
+
+        <!-- 第四行：依赖函数和绑定配置 -->
         <a-row :gutter="16">
           <!-- 依赖函数 -->
           <a-col :span="12">
@@ -62,9 +112,9 @@
           </a-col>
         </a-row>
 
-        <!-- 第四行：参数定义和工具代码使用tab切换 -->
+        <!-- 第五行：参数定义和工具代码使用tab切换 -->
         <a-form-item>
-          <a-tabs v-model:activeKey="codeTabKey">
+          <a-tabs v-model:activeKey="activeTabKey">
             <!-- 参数定义标签页 -->
             <a-tab-pane key="parameters" tab="参数定义" force-render>
               <div class="tab-description">
@@ -76,8 +126,11 @@
                 />
               </div>
               <div class="schema-editor-container">
-                <!-- 使用新的JsonSchemaEditor组件 -->
-                <JsonSchemaEditor v-model:value="formState.parametersStr" />
+                <!-- 使用JsonSchemaEditor组件 -->
+                <JsonSchemaEditor 
+                  v-model:value="formState.parametersStr" 
+                  :is-http-tool="formState.type === 'http'"
+                />
               </div>
             </a-tab-pane>
 
@@ -115,7 +168,9 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   SaveOutlined,
   RollbackOutlined,
-  CloudUploadOutlined
+  CloudUploadOutlined,
+  PlusOutlined,
+  DeleteOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, validateJson } from '../../utils/api-util'
@@ -127,18 +182,43 @@ const router = useRouter()
 const route = useRoute()
 const toolId = computed(() => route.params.id)
 const isEdit = computed(() => !!toolId.value)
+const toolType = computed(() => route.query.type || 'basic')
 
 const saving = ref(false)
 const loading = ref(false)
 const loadingFuncs = ref(false)
 const loadingConfigs = ref(false)
-const codeTabKey = ref('parameters')
+const activeTabKey = ref('parameters')
 
 const formState = reactive({
   name: '',
   description: '',
-  parametersStr: JSON.stringify({ type: 'object', properties: { name: { type: 'string', description: '名称' } }, required: ['name'] }, null, 2),
-  code: '# parameters: 传入参数\n# config: 传入配置\n# result: 用于返回值\n\n# 示例代码：\nprint("执行工具...")\nresult = {"message": "Hello, World!", "parameters": parameters, "config": config}\n',
+  type: toolType.value,
+  setting: toolType.value === 'http' ? {
+    url: '',
+    headers: [{key: "Content-Type", value: "application/json"}]
+  } : {},
+  parametersStr: toolType.value === 'http' ?
+    JSON.stringify({ type: 'object', properties: { name: { type: 'string', description: '名称', location: 'body' } }, required: ['name'] })
+    : JSON.stringify({ type: 'object', properties: { name: { type: 'string', description: '名称' } }, required: ['name'] }),
+
+  code: toolType.value === 'http' ? 
+    `# url: 请求地址
+# headers: 请求Header
+# parameters: 传入工具参数
+# config: 传入绑定配置
+# result: 用于返回值
+
+# 示例代码：
+print("执行工具...")
+result = easy_http_call(url, headers, parameters, config)` :
+    `# parameters: 传入工具参数
+# config: 传入绑定配置
+# result: 用于返回值
+
+# 示例代码：
+print("执行工具...")
+result = {"message": "Hello, World!", "parameters": parameters, "config": config}`,
   func_ids: [],
   config_ids: []
 })
@@ -146,14 +226,39 @@ const formState = reactive({
 const funcOptions = ref([])
 const configOptions = ref([])
 
-const formattedParameters = computed(() => {
-  try {
-    const parsed = JSON.parse(formState.parametersStr)
-    return JSON.stringify(parsed, null, 2)
-  } catch (e) {
-    return '无效的 JSON'
+const headerColumns = [
+  {
+    title: 'Key',
+    dataIndex: 'key',
+    key: 'key',
+    width: '40%'
+  },
+  {
+    title: 'Value',
+    dataIndex: 'value',
+    key: 'value',
+    width: '40%'
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: '20%'
   }
-})
+]
+
+const addHeader = () => {
+  formState.setting.headers.push({ key: '', value: '' })
+}
+
+const removeHeader = (index) => {
+  formState.setting.headers.splice(index, 1)
+}
+
+const handleHeaderChange = (index, field, value) => {
+  if (formState.setting.headers[index]) {
+    formState.setting.headers[index][field] = value
+  }
+}
 
 onMounted(async () => {
   // Load functions and configs
@@ -220,8 +325,15 @@ const fetchToolData = async () => {
       onSuccess: (data) => {
         formState.name = data.name
         formState.description = data.description || ''
+        formState.type = data.type || 'basic'
         formState.parametersStr = JSON.stringify(data.parameters, null, 2)
         formState.code = data.code
+        formState.setting = data.setting || { url: '', headers: [] }
+
+        // 确保 headers 是数组格式
+        if (formState.setting.headers && !Array.isArray(formState.setting.headers)) {
+          formState.setting.headers = []
+        }
 
         // Load relationships
         fetchToolFunctions()
@@ -283,6 +395,13 @@ const validateForm = () => {
     return false
   }
 
+  if (formState.type === 'http') {
+    if (!formState.setting.url) {
+      message.error('请输入HTTP请求地址')
+      return false
+    }
+  }
+
   const parametersValidation = validateJson(formState.parametersStr)
   if (!parametersValidation.valid) {
     message.error('参数定义 JSON 格式不正确: ' + parametersValidation.message)
@@ -298,14 +417,24 @@ const validateForm = () => {
 }
 
 const prepareData = () => {
-  return {
+  const data = {
     name: formState.name,
     description: formState.description,
+    type: formState.type,
+    setting: formState.type === 'http' ? {
+      url: formState.setting.url,
+      headers: formState.setting.headers.map(header => ({
+        key: header.key,
+        value: header.value
+      }))
+    } : {},
     parameters: JSON.parse(formState.parametersStr),
     code: formState.code,
     func_ids: formState.func_ids,
     config_ids: formState.config_ids
   }
+
+  return data
 }
 
 const handleSave = async () => {
@@ -388,45 +517,35 @@ const goBack = () => {
 </script>
 
 <style scoped>
-.schema-editor-container {
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  min-height: 450px;
-  padding: 16px;
-  background-color: #fafafa;
+.form-container {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .tab-description {
-  margin-bottom: 20px;
-}
-
-.editor-container {
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  height: 450px;
-  overflow: hidden;
-}
-
-.form-container {
-  max-width: 100%;
-}
-
-/* 增强标签页样式 */
-:deep(.ant-tabs-nav) {
   margin-bottom: 16px;
 }
 
-:deep(.ant-tabs-tab) {
-  padding: 12px 16px;
-  font-size: 15px;
+.schema-editor-container {
+  border-radius: 2px;
 }
 
-:deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  font-weight: 500;
+.editor-container {
+  border-radius: 2px;
 }
 
-/* 增强表单项样式 */
-:deep(.ant-form-item-label > label) {
-  font-weight: 500;
+.header-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+:deep(.header-form-item .ant-form-item-label) {
+  padding-bottom: 0;
+}
+
+:deep(.header-form-item .ant-form-item-label > label) {
+  height: 32px;
+  line-height: 32px;
 }
 </style>

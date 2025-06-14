@@ -34,6 +34,7 @@
                 <MenuOutlined class="drag-handle" />
                 <span class="property-name">{{ element.key }}</span>
                 <a-tag color="blue">{{ getTypeLabel(element.schema.type) }}</a-tag>
+                <a-tag v-if="element.schema.location" color="purple">{{ element.schema.location }}</a-tag>
                 <a-tag v-if="isRequired(element.key)" color="red">必填</a-tag>
                 <div class="property-actions">
                   <a-button type="text" size="small" @click="editProperty(index)">
@@ -80,6 +81,14 @@
             placeholder="请输入参数名称"
             :disabled="!isNewProperty"
           />
+        </a-form-item>
+
+        <a-form-item label="参数位置" required v-if="isHttpTool">
+          <a-select v-model:value="currentProperty.schema.location" placeholder="请选择参数位置">
+            <a-select-option value="url">URL</a-select-option>
+            <a-select-option value="header">Header</a-select-option>
+            <a-select-option value="body">Body</a-select-option>
+          </a-select>
         </a-form-item>
 
         <a-form-item label="参数类型" required>
@@ -233,6 +242,10 @@ const props = defineProps({
   value: {
     type: String,
     required: true
+  },
+  isHttpTool: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -336,7 +349,8 @@ const addProperty = () => {
     key: '',
     schema: {
       type: 'string',
-      description: ''
+      description: '',
+      location: props.isHttpTool ? 'body' : undefined
     },
     required: false
   }
@@ -449,6 +463,59 @@ watch(editorMode, (newMode) => {
     parseJsonSchema()
   }
 })
+
+const columns = computed(() => {
+  const baseColumns = [
+    {
+      title: '参数名',
+      dataIndex: 'name',
+      key: 'name',
+      width: '15%'
+    },
+    {
+      title: '类型',
+      dataIndex: 'type',
+      key: 'type',
+      width: '10%'
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      key: 'description',
+      width: '20%'
+    },
+    {
+      title: '必填',
+      dataIndex: 'required',
+      key: 'required',
+      width: '8%'
+    },
+    {
+      title: '默认值',
+      dataIndex: 'default',
+      key: 'default',
+      width: '15%'
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: '12%'
+    }
+  ]
+
+  // 检查是否有任何参数包含 location 字段
+  const hasLocationField = properties.value.some(param => param.schema.location)
+  if (hasLocationField) {
+    baseColumns.splice(1, 0, {
+      title: '参数位置',
+      dataIndex: 'location',
+      key: 'location',
+      width: '10%'
+    })
+  }
+
+  return baseColumns
+})
 </script>
 
 <style scoped>
@@ -460,23 +527,20 @@ watch(editorMode, (newMode) => {
 }
 
 .editor-mode-switch {
-  margin-bottom: 16px;
+  margin-bottom: 6px;
   text-align: right;
 }
 
 .visual-editor {
   flex: 1;
   overflow: auto;
-  padding: 8px;
   background-color: #fff;
-  border: 1px solid #f0f0f0;
   border-radius: 4px;
 }
 
 .json-editor {
   flex: 1;
   height: 400px;
-  border: 1px solid #f0f0f0;
   border-radius: 4px;
   overflow: hidden;
 }

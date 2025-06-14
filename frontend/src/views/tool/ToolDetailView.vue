@@ -53,6 +53,14 @@
               <div class="info-value">{{ tool.description || '无描述' }}</div>
             </div>
             <div class="info-row">
+              <div class="info-label">工具类型:</div>
+              <div class="info-value">
+                <a-tag :color="tool.type === 'http' ? 'blue' : 'green'">
+                  {{ tool.type === 'http' ? 'HTTP工具' : '基础工具' }}
+                </a-tag>
+              </div>
+            </div>
+            <div class="info-row">
               <div class="info-label">状态:</div>
               <div class="info-value">
                 <a-tag :color="tool.is_enabled ? 'green' : 'red'">
@@ -80,6 +88,32 @@
               <div class="info-label">更新人:</div>
               <div class="info-value">{{ tool.updated_by || '-' }}</div>
             </div>
+
+            <!-- HTTP工具特有信息 -->
+            <template v-if="tool.type === 'http'">
+              <div class="info-row">
+                <div class="info-label">请求地址:</div>
+                <div class="info-value">{{ tool.setting?.url || '-' }}</div>
+              </div>
+              <div class="info-row" v-if="tool.setting?.headers?.length">
+                <div class="info-label">固定请求头:</div>
+                <div class="info-value">
+                  <a-table
+                    :columns="headerColumns"
+                    :data-source="tool.setting.headers"
+                    :pagination="false"
+                    size="small"
+                    bordered
+                  >
+                    <template #bodyCell="{ column, record }">
+                      <template v-if="column.key === 'value'">
+                        <span>{{ record.value }}</span>
+                      </template>
+                    </template>
+                  </a-table>
+                </div>
+              </div>
+            </template>
           </div>
         </a-tab-pane>
 
@@ -91,6 +125,7 @@
               <div class="parameter-header">
                 <span class="parameter-name">{{ param.title || key }}</span>
                 <a-tag class="parameter-type">{{ param.type || 'string' }}</a-tag>
+                <a-tag v-if="param.location" color="purple">{{ param.location }}</a-tag>
                 <a-tag v-if="isRequired(key)" color="red">必填</a-tag>
               </div>
               <div v-if="param.description" class="parameter-description">
@@ -334,33 +369,18 @@ const deployModalVisible = ref(false)
 const deployDescription = ref('')
 const deploying = ref(false)
 
-const historyColumns = [
+const headerColumns = [
   {
-    title: '版本',
-    key: 'version',
-    width: 100
+    title: 'Key',
+    dataIndex: 'key',
+    key: 'key',
+    width: '40%'
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    key: 'description',
-    ellipsis: true
-  },
-  {
-    title: '发布时间',
-    key: 'created_at',
-    width: 180
-  },
-  {
-    title: '发布人',
-    dataIndex: 'created_by',
-    key: 'created_by',
-    width: 120
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 150
+    title: 'Value',
+    dataIndex: 'value',
+    key: 'value',
+    width: '60%'
   }
 ]
 

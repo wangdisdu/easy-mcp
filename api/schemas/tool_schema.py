@@ -15,12 +15,16 @@ class ToolBase(BaseModel):
     Attributes:
         name: Tool name
         description: Tool description
+        type: Tool type (basic or http)
+        setting: Advanced settings (JSON string)
         parameters: Tool parameters (JSON Schema)
         code: Tool implementation code
     """
 
     name: str = Field(description="Tool name")
     description: Optional[str] = Field(default=None, description="Tool description")
+    type: str = Field(default="basic", description="Tool type (basic or http)")
+    setting: Dict[str, Any] = Field(default_factory=dict, description="Advanced settings (JSON string)")
     parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
     code: str = Field(description="Tool implementation code")
 
@@ -98,6 +102,16 @@ class ToolResponse(ToolBase):
                 return {}
         return v
 
+    @field_validator("setting", mode="before")
+    @classmethod
+    def parse_setting(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return {}
+        return v
+
 
 class ToolDeployBase(BaseModel):
     """
@@ -106,12 +120,16 @@ class ToolDeployBase(BaseModel):
     Attributes:
         version: Version number
         parameters: Tool parameters (JSON Schema)
+        type: Tool type (basic or http)
+        setting: Advanced settings (JSON string)
         code: Tool implementation code
         description: Version description
     """
 
     version: int = Field(description="Version number")
     parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
+    type: str = Field(default="basic", description="Tool type (basic or http)")
+    setting: Dict[str, Any] = Field(default_factory=dict, description="Advanced settings (JSON string)")
     code: str = Field(description="Tool implementation code")
     description: Optional[str] = Field(default=None, description="Version description")
 
@@ -144,6 +162,16 @@ class ToolDeployResponse(ToolDeployBase):
     @field_validator("parameters", mode="before")
     @classmethod
     def parse_parameters(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return {}
+        return v
+
+    @field_validator("setting", mode="before")
+    @classmethod
+    def parse_setting(cls, v):
         if isinstance(v, str):
             try:
                 return json.loads(v)
