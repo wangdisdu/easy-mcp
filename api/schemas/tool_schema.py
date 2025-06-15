@@ -24,7 +24,9 @@ class ToolBase(BaseModel):
     name: str = Field(description="Tool name")
     description: Optional[str] = Field(default=None, description="Tool description")
     type: str = Field(default="basic", description="Tool type (basic or http)")
-    setting: Dict[str, Any] = Field(default_factory=dict, description="Advanced settings (JSON string)")
+    setting: Dict[str, Any] = Field(
+        default_factory=dict, description="Advanced settings (JSON string)"
+    )
     parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
     code: str = Field(description="Tool implementation code")
 
@@ -129,7 +131,9 @@ class ToolDeployBase(BaseModel):
     version: int = Field(description="Version number")
     parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
     type: str = Field(default="basic", description="Tool type (basic or http)")
-    setting: Dict[str, Any] = Field(default_factory=dict, description="Advanced settings (JSON string)")
+    setting: Dict[str, Any] = Field(
+        default_factory=dict, description="Advanced settings (JSON string)"
+    )
     code: str = Field(description="Tool implementation code")
     description: Optional[str] = Field(default=None, description="Version description")
 
@@ -211,6 +215,53 @@ class ToolDebugResponse(BaseModel):
     )
     error_message: Optional[str] = Field(
         default=None, description="Error message if execution failed"
+    )
+
+
+class ToolHttpHeader(BaseModel):
+    """
+    Tool HTTP header schema.
+
+    Attributes:
+        key: Header key
+        value: Header value
+    """
+
+    key: str = Field(description="Header key")
+    value: str = Field(description="Header value")
+
+
+class ToolExecuteSetting(BaseModel):
+    """
+    Tool execute setting meta schema.
+
+    Attributes:
+        url: Http Tool url
+        headers: Http Tool headers
+        parameters: Tool parameters (JSON Schema)
+    """
+
+    url: str = Field(description="Http Tool url")
+    headers: List[ToolHttpHeader] = Field(description="Http Tool headers")
+    parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
+
+
+class ToolExecuteMeta(BaseModel):
+    """
+    Tool Execute Meta schema.
+
+    Attributes:
+        name: Tool name
+        description: Tool description
+        type: Tool type (basic or http)
+        setting: Tool settings (ToolExecuteSettingMeta)
+    """
+
+    name: str = Field(description="Tool name")
+    description: Optional[str] = Field(default=None, description="Tool description")
+    type: str = Field(default="basic", description="Tool type (basic or http)")
+    setting: ToolExecuteSetting = Field(
+        description="Tool settings (ToolExecuteSettingMeta)"
     )
 
 
