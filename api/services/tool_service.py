@@ -15,6 +15,7 @@ from sqlalchemy import or_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from api.errors.config_error import ConfigAlreadyExistsError
 from api.errors.tool_error import (
     ToolNotFoundError,
     ToolAlreadyExistsError,
@@ -32,6 +33,8 @@ from api.schemas.tool_schema import (
     BuiltinToolInfo,
     BuiltinToolListResponse,
 )
+from api.services.config_service import ConfigService
+from api.services.tool_log_service import ToolLogService
 from api.utils.audit_util import audit
 from api.utils.time_util import get_current_unix_ms
 
@@ -784,9 +787,6 @@ class ToolService:
         finally:
             # Record tool log
             try:
-                # Import here to avoid circular imports
-                from api.services.tool_log_service import ToolLogService
-
                 response_time = get_current_unix_ms()
                 duration_ms = response_time - request_time
 
@@ -871,6 +871,7 @@ class ToolService:
         Raises:
             ToolNotFoundError: If tool not found
             ToolAlreadyExistsError: If tool already exists
+            ConfigAlreadyExistsError: If tool's config already exists
         """
         # Get the sample directory path
         sample_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sample")
@@ -898,6 +899,18 @@ class ToolService:
             if existing_tool:
                 logger.warning(f"Tool already exists: {tool_name}")
                 raise ToolAlreadyExistsError(name=tool_name)
+
+            # Check if config exists if tool requires config
+            if "config" in manifest:
+                # Create config service
+                config_service = ConfigService(self.db)
+
+                # Check if config already exists
+                config_name = f"{tool_name}_config"
+                existing_config = await config_service.get_config_by_name(config_name)
+                if existing_config:
+                    logger.warning(f"Tool's config already exists: {config_name}")
+                    raise ConfigAlreadyExistsError(name=config_name)
 
             # Get tool code
             code_file = manifest.get("code", {}).get("file")
@@ -934,11 +947,6 @@ class ToolService:
             # Create config if needed
             config_id = None
             if "config" in manifest:
-                # Create config service
-                from api.services.config_service import ConfigService
-
-                config_service = ConfigService(self.db)
-
                 # Create config
                 config_data = ConfigCreate(
                     name=f"{tool_name}_config",
@@ -970,7 +978,7 @@ class ToolService:
 
             return tool
 
-        except (ToolNotFoundError, ToolAlreadyExistsError):
+        except (ToolNotFoundError, ToolAlreadyExistsError, ConfigAlreadyExistsError):
             raise
         except Exception as e:
             logger.error(f"Error importing tool {tool_id}: {str(e)}")
