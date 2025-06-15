@@ -94,7 +94,8 @@ class ServiceErrorMiddleware(BaseHTTPMiddleware):
                 status_code=400,
                 content={
                     "code": e.code,
-                    "message": e.reason,
+                    "reason": e.reason,
+                    "message": e.description,
                     "details": e.details,
                     "request_id": request_id,
                 },
