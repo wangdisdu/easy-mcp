@@ -49,18 +49,14 @@
 
           <!-- 操作列 -->
           <template v-else-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" size="small" @click="router.push(`/config/${record.id}`)">
-                <template #icon><EyeOutlined /></template>
-                查看
+            <a-space :size="0">
+              <a-button type="link" size="small" @click="openConfigModal(record)">
+                <template #icon><SettingOutlined /></template>
+                配置
               </a-button>
               <a-button type="link" size="small" @click="router.push(`/config/${record.id}/edit`)">
                 <template #icon><EditOutlined /></template>
                 编辑
-              </a-button>
-              <a-button type="link" size="small" @click="openConfigModal(record)">
-                <template #icon><SettingOutlined /></template>
-                配置
               </a-button>
               <a-popconfirm
                 title="确定要删除此配置吗？"

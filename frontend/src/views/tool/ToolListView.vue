@@ -105,10 +105,10 @@
 
           <!-- 操作列 -->
           <template v-else-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" size="small" @click="router.push(`/tool/${record.id}`)">
-                <template #icon><EyeOutlined /></template>
-                查看
+            <a-space :size="0">
+              <a-button type="link" size="small" @click="router.push(`/tool/${record.id}/debug`)">
+                <template #icon><BugOutlined /></template>
+                调试
               </a-button>
               <a-button type="link" size="small" @click="router.push(`/tool/${record.id}/edit`)">
                 <template #icon><EditOutlined /></template>
@@ -173,7 +173,8 @@ import {
   DownOutlined,
   ToolOutlined,
   CloudOutlined,
-  GlobalOutlined
+  GlobalOutlined,
+  BugOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp } from '../../utils/api-util'

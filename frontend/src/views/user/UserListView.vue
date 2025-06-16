@@ -44,11 +44,7 @@
 
           <!-- 操作列 -->
           <template v-else-if="column.key === 'action'">
-            <a-space>
-              <a-button type="link" size="small" @click="router.push(`/user/${record.id}`)">
-                <template #icon><EyeOutlined /></template>
-                查看
-              </a-button>
+            <a-space :size="0">
               <a-button type="link" size="small" @click="router.push(`/user/${record.id}/edit`)">
                 <template #icon><EditOutlined /></template>
                 编辑
