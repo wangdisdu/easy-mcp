@@ -2,13 +2,14 @@
 Tool router.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Any
+import json
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.database import get_db
-from api.errors.tool_error import ToolExecutionError
+from api.errors.tool_error import ToolExecutionError, ToolNotFoundError
 from api.models.tb_user import TbUser
 from api.schemas.common_schema import PaginatedResponse, Response
 from api.schemas.config_schema import ConfigResponse
@@ -22,6 +23,8 @@ from api.schemas.tool_schema import (
     ToolDeployResponse,
     ToolResponse,
     ToolUpdate,
+    ToolMcpResponse,
+    ToolMcpExecuteRequest,
 )
 from api.services.tool_service import ToolService
 from api.utils.security_util import get_current_user
@@ -444,3 +447,66 @@ async def import_builtin_tool(
     service = ToolService(db)
     tool = await service.import_builtin_tool(import_data.tool_id, current_user.username)
     return Response(data=ToolResponse.model_validate(tool))
+
+
+@router.get("-mcp", response_model=Response[List[ToolMcpResponse]])
+async def list_mcp_tools(
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    List all tools available for MCP.
+
+    Returns:
+        Response[List[ToolMcpResponse]]: List of tools with name, description and parameters
+    """
+    service = ToolService(db)
+    tools, _ = await service.query_tools(page=1, size=1000)  # Get all tools
+
+    # Filter enabled tools and map to MCP response
+    mcp_tools = [
+        ToolMcpResponse(
+            name=tool.name,
+            description=tool.description,
+            parameters=json.loads(tool.parameters),
+        )
+        for tool in tools
+        if tool.is_enabled
+    ]
+
+    return Response(data=mcp_tools)
+
+
+@router.post("-mcp/{name}/execute", response_model=Response[Any])
+async def execute_mcp_tool(
+    name: str,
+    execute_data: ToolMcpExecuteRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Execute a tool by name.
+
+    Args:
+        name: Tool name
+        execute_data: Execution parameters
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[Any]: Execution result
+    """
+    service = ToolService(db)
+
+    # Get tool by name
+    tool = await service.get_tool_by_name(name)
+    if not tool:
+        raise ToolNotFoundError(name=name)
+
+    try:
+        result, logs = await service.execute_tool(
+            tool.id, execute_data.parameters, call_type="mcp"
+        )
+        return Response(data=result)
+    except ToolExecutionError as e:
+        return Response(data=e.description)

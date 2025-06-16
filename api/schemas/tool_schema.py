@@ -257,3 +257,17 @@ class BuiltinToolImportRequest(BaseModel):
     """
 
     tool_id: str = Field(description="Tool ID to import")
+
+
+class ToolMcpResponse(BaseModel):
+    """MCP tool response model."""
+
+    name: str = Field(..., description="Tool name")
+    description: str = Field(..., description="Tool description")
+    parameters: Dict[str, Any] = Field(..., description="Tool parameters schema")
+
+
+class ToolMcpExecuteRequest(BaseModel):
+    """MCP tool execution request model."""
+
+    parameters: Dict[str, Any] = Field(..., description="Tool execution parameters")
