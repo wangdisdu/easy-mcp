@@ -218,54 +218,6 @@ class ToolDebugResponse(BaseModel):
     )
 
 
-class ToolHttpHeader(BaseModel):
-    """
-    Tool HTTP header schema.
-
-    Attributes:
-        key: Header key
-        value: Header value
-    """
-
-    key: str = Field(description="Header key")
-    value: str = Field(description="Header value")
-
-
-class ToolExecuteSetting(BaseModel):
-    """
-    Tool execute setting meta schema.
-
-    Attributes:
-        url: Http Tool url
-        headers: Http Tool headers
-        parameters: Tool parameters (JSON Schema)
-    """
-
-    url: str = Field(description="Http Tool url")
-    method: str = Field(default="POST", description="Http Tool method")
-    headers: List[ToolHttpHeader] = Field(description="Http Tool headers")
-    parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
-
-
-class ToolExecuteMeta(BaseModel):
-    """
-    Tool Execute Meta schema.
-
-    Attributes:
-        name: Tool name
-        description: Tool description
-        type: Tool type (basic or http)
-        setting: Tool settings (ToolExecuteSettingMeta)
-    """
-
-    name: str = Field(description="Tool name")
-    description: Optional[str] = Field(default=None, description="Tool description")
-    type: str = Field(default="basic", description="Tool type (basic or http)")
-    setting: ToolExecuteSetting = Field(
-        description="Tool settings (ToolExecuteSettingMeta)"
-    )
-
-
 class BuiltinToolInfo(BaseModel):
     """
     Builtin tool information schema.

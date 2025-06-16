@@ -30,8 +30,6 @@ from api.schemas.config_schema import ConfigCreate
 from api.schemas.tool_schema import (
     ToolCreate,
     ToolUpdate,
-    ToolExecuteSetting,
-    ToolExecuteMeta,
     BuiltinToolInfo,
     BuiltinToolListResponse,
 )
@@ -172,13 +170,14 @@ class ToolService:
                 http_func = TbFunc(
                     name="easy_http_call",
                     description="HTTP request helper function",
-                    code='''def easy_http_call(method, url_param, headers_param, parameters, config):
+                    code='''def easy_http_call(method: str, url: str, headers: list, parameters: dict, config: dict) -> dict:
     """
     Make HTTP request with parameters.
 
     Args:
-        url_param: Request URL
-        headers_param: Request headers
+        method: HTTP method (GET, POST, PUT, DELETE)
+        url: Request URL
+        headers: Request headers
         parameters: Request parameters
         config: Tool configuration
     
@@ -189,35 +188,46 @@ class ToolService:
     import json
     
     # Process URL parameters
-    url = url_param
     if parameters:
-        for key, value in parameters.items():
-            url = url.replace("{"+key+"}", str(value))
+        for key, value in list(parameters.items()):
+            var = f"{{{key}}}"
+            if var in url:
+                url = url.replace(var, str(value))
+                del parameters[key]
     
     # Process header parameters
-    headers = {}
-    if headers_param:
-        for header in headers_param:
-            header_key = header.key
-            header_value = header.value
+    http_headers = {}
+    if headers:
+        for header in headers:
+            header_key = header["key"]
+            header_value = header["value"]
             if parameters:
-                for key, value in parameters.items():
-                    header_value = header_value.replace("{"+key+"}", str(value))
-            headers[header_key] = header_value
+                for key, value in list(parameters.items()):
+                    var = f"{{{key}}}"
+                    if var in header_value:
+                        header_value = header_value.replace(var, str(value))
+                        del parameters[key]
+            http_headers[header_key] = header_value
 
     print(f"url: {url}")
     print(f"method: {method}")
-    print(f"headers: {headers}")
+    print(f"headers: {http_headers}")
     print(f"body: {parameters}")
     
+    # Prepare request kwargs
+    request_kwargs = {
+        "method": method,
+        "url": url,
+        "headers": http_headers,
+        "timeout": 30
+    }
+    
+    # Only add json parameter if there are remaining parameters
+    if parameters:
+        request_kwargs["json"] = parameters
+    
     # Make request
-    response = requests.request(
-        method=method,
-        url=url,
-        headers=headers,
-        json=parameters,
-        timeout=30
-    )
+    response = requests.request(**request_kwargs)
 
     # Return response
     if response.headers.get('content-type', '').startswith('application/json'):
@@ -742,28 +752,6 @@ class ToolService:
             # Create a namespace for execution
             namespace = {}
 
-            setting_dic = json.loads(tool.setting)
-            setting = ToolExecuteSetting(
-                url=setting_dic.get("url", ""),
-                method=setting_dic.get("method", "POST"),
-                headers=setting_dic.get("headers", []),
-                parameters=json.loads(tool.parameters),
-            )
-            meta = ToolExecuteMeta(
-                name=tool.name,
-                description=tool.description,
-                type=tool.type,
-                setting=setting,
-            )
-            # Add meta to namespace
-            namespace["meta"] = meta
-
-            # For HTTP tools, add url and headers from setting
-            if tool.type == "http" and tool.setting:
-                namespace["url"] = setting.url
-                namespace["method"] = setting.method
-                namespace["headers"] = setting.headers
-
             # Add parameters to namespace
             namespace["parameters"] = parameters
 
@@ -783,6 +771,13 @@ class ToolService:
                             )
                             continue
                 namespace["config"] = config_var
+
+            setting = json.loads(tool.setting)
+            # For HTTP tools, add url and headers from setting
+            if tool.type == "http" and tool.setting:
+                namespace["url"] = setting["url"]
+                namespace["method"] = setting["method"]
+                namespace["headers"] = setting["headers"]
 
             # Execute the module code directly
             output_buffer = io.StringIO()
