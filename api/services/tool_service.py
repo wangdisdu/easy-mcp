@@ -206,6 +206,7 @@ class ToolService:
             headers[header_key] = header_value
 
     print(f"url: {url}")
+    print(f"method: {method}")
     print(f"headers: {headers}")
     print(f"body: {parameters}")
     
@@ -744,6 +745,7 @@ class ToolService:
             setting_dic = json.loads(tool.setting)
             setting = ToolExecuteSetting(
                 url=setting_dic.get("url", ""),
+                method=setting_dic.get("method", "POST"),
                 headers=setting_dic.get("headers", []),
                 parameters=json.loads(tool.parameters),
             )
@@ -759,6 +761,7 @@ class ToolService:
             # For HTTP tools, add url and headers from setting
             if tool.type == "http" and tool.setting:
                 namespace["url"] = setting.url
+                namespace["method"] = setting.method
                 namespace["headers"] = setting.headers
 
             # Add parameters to namespace

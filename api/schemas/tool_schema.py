@@ -242,6 +242,7 @@ class ToolExecuteSetting(BaseModel):
     """
 
     url: str = Field(description="Http Tool url")
+    method: str = Field(default="POST", description="Http Tool method")
     headers: List[ToolHttpHeader] = Field(description="Http Tool headers")
     parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
 

@@ -95,8 +95,12 @@
                 <div class="info-label">请求地址:</div>
                 <div class="info-value">{{ tool.setting?.url || '-' }}</div>
               </div>
+              <div class="info-row">
+                <div class="info-label">请求方法:</div>
+                <div class="info-value">{{ tool.setting?.method || '-' }}</div>
+              </div>
               <div class="info-row" v-if="tool.setting?.headers?.length">
-                <div class="info-label">固定请求头:</div>
+                <div class="info-label">请求头:</div>
                 <div class="info-value">
                   <a-table
                     :columns="headerColumns"

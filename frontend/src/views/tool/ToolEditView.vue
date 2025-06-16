@@ -39,6 +39,15 @@
             <a-input v-model:value="formState.setting.url" placeholder="请输入HTTP请求地址，支持参数变量占位符，如：http://localhost:80/user/{id}?format={format}" />
           </a-form-item>
 
+          <a-form-item label="请求方法" required>
+            <a-select v-model:value="formState.setting.method" placeholder="请选择请求方法">
+              <a-select-option value="GET">GET</a-select-option>
+              <a-select-option value="POST">POST</a-select-option>
+              <a-select-option value="PUT">PUT</a-select-option>
+              <a-select-option value="DELETE">DELETE</a-select-option>
+            </a-select>
+          </a-form-item>
+
           <a-form-item 
             label="请求Header" 
             :label-col="{ span: 24 }"
@@ -196,6 +205,7 @@ const formState = reactive({
   type: toolType.value,
   setting: toolType.value === 'http' ? {
     url: '',
+    method: 'POST',
     headers: [{key: "Content-Type", value: "application/json"}]
   } : {},
   parametersStr: toolType.value === 'http' ?
@@ -204,6 +214,7 @@ const formState = reactive({
 
   code: toolType.value === 'http' ? 
     `# url: 请求地址
+# method: 请求Method
 # headers: 请求Header
 # parameters: 传入工具参数
 # config: 传入绑定配置
@@ -211,7 +222,7 @@ const formState = reactive({
 
 # 示例代码：
 print("执行工具...")
-result = easy_http_call(url, headers, parameters, config)` :
+result = easy_http_call(method, url, headers, parameters, config)` :
     `# parameters: 传入工具参数
 # config: 传入绑定配置
 # result: 用于返回值
@@ -423,6 +434,7 @@ const prepareData = () => {
     type: formState.type,
     setting: formState.type === 'http' ? {
       url: formState.setting.url,
+      method: formState.setting.method,
       headers: formState.setting.headers.map(header => ({
         key: header.key,
         value: header.value
