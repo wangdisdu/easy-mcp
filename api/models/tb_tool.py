@@ -7,6 +7,8 @@ from typing import Optional
 from sqlalchemy import BigInteger, Index, Text
 from sqlmodel import Field, SQLModel
 
+from api.constants import ToolType
+
 
 class TbTool(SQLModel, table=True):
     """
@@ -16,7 +18,7 @@ class TbTool(SQLModel, table=True):
         id: Tool ID
         name: Tool name
         description: Tool description
-        type: Tool type (basic or http)
+        type: Tool type (basic, http, or database)
         setting: Advanced settings (JSON string)
         parameters: Tool parameters (JSON Schema)
         code: Tool implementation code
@@ -33,7 +35,7 @@ class TbTool(SQLModel, table=True):
     id: int = Field(primary_key=True)
     name: str = Field(unique=True, index=True)
     description: Optional[str] = Field(default=None, sa_type=Text)
-    type: str = Field(default="basic")
+    type: str = Field(default=ToolType.BASIC)
     setting: str = Field(default="{}", sa_type=Text)
     parameters: str = Field(default="{}", sa_type=Text)
     code: str = Field(sa_type=Text)
@@ -53,7 +55,7 @@ class TbToolDeploy(SQLModel, table=True):
         id: Deployment record ID
         tool_id: Tool ID
         version: Version number
-        type: Tool type (basic or http)
+        type: Tool type (basic, http, or database)
         setting: Advanced settings (JSON string)
         parameters: Tool parameters (JSON Schema)
         code: Tool implementation code
@@ -69,7 +71,7 @@ class TbToolDeploy(SQLModel, table=True):
     id: int = Field(primary_key=True)
     tool_id: int = Field(index=True)
     version: int = Field()
-    type: str = Field(default="basic")
+    type: str = Field(default=ToolType.BASIC)
     setting: str = Field(default="{}", sa_type=Text)
     parameters: str = Field(default="{}", sa_type=Text)
     code: str = Field(sa_type=Text)

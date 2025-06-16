@@ -3,7 +3,7 @@
     <a-card :title="`调试工具: ${tool ? tool.name : '加载中...'}`">
       <template #extra>
         <a-space>
-          <a-button @click="router.push(`/tool/${toolId}`)">
+          <a-button @click="router.push(`/tool`)">
             <template #icon><RollbackOutlined /></template>
             返回
           </a-button>

@@ -92,6 +92,40 @@
           </a-form-item>
         </template>
 
+        <!-- 数据库工具特有字段 -->
+        <template v-if="formState.type === 'database'">
+          <a-form-item label="DB URL" required>
+            <a-input v-model:value="formState.setting.url" placeholder="请输入数据库连接URL，例如：mysql://localhost:3306/easy_mcp" />
+          </a-form-item>
+
+          <a-row :gutter="16">
+            <a-col :span="12">
+              <a-form-item label="用户名" required>
+                <a-input v-model:value="formState.setting.username" placeholder="请输入数据库用户名" />
+              </a-form-item>
+            </a-col>
+            <a-col :span="12">
+              <a-form-item label="密码" required>
+                <a-input-password v-model:value="formState.setting.password" placeholder="请输入数据库密码" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <a-form-item label="查询SQL" required>
+            <div class="editor-container">
+              <MonacoEditor
+                v-model:value="formState.setting.sql"
+                language="xml"
+                :options="{
+                  automaticLayout: true,
+                  scrollBeyondLastLine: false,
+                  minimap: { enabled: false }
+                }"
+              />
+            </div>
+          </a-form-item>
+        </template>
+
         <!-- 第四行：依赖函数和绑定配置 -->
         <a-row :gutter="16">
           <!-- 依赖函数 -->
@@ -207,11 +241,22 @@ const formState = reactive({
     url: '',
     method: 'POST',
     headers: [{key: "Content-Type", value: "application/json"}]
+  } : toolType.value === 'database' ? {
+    url: '',
+    username: '',
+    password: '',
+    sql: `SELECT * FROM table_name
+<where>
+    <if test="id != null">
+        AND id = #{id}
+    </if>
+</where>`
   } : {},
   parametersStr: toolType.value === 'http' ?
     JSON.stringify({ type: 'object', properties: { name: { type: 'string', description: '名称', location: 'body' } }, required: ['name'] })
+    : toolType.value === 'database' ?
+    JSON.stringify({ type: 'object', properties: { id: { type: 'integer', description: 'ID' } }, required: [] })
     : JSON.stringify({ type: 'object', properties: { name: { type: 'string', description: '名称' } }, required: ['name'] }),
-
   code: toolType.value === 'http' ? 
     `# url: 请求地址
 # method: 请求Method
@@ -223,6 +268,18 @@ const formState = reactive({
 # 示例代码：
 print("执行工具...")
 result = easy_http_call(method, url, headers, parameters, config)` :
+    toolType.value === 'database' ?
+    `# url: 数据库连接URL
+# username: 数据库用户名
+# password: 数据库密码
+# sql: 查询SQL
+# parameters: 传入工具参数
+# config: 传入绑定配置
+# result: 用于返回值
+
+# 示例代码：
+print("执行工具...")
+result = easy_database_call(url, username, password, sql, parameters, config)` :
     `# parameters: 传入工具参数
 # config: 传入绑定配置
 # result: 用于返回值
@@ -439,6 +496,11 @@ const prepareData = () => {
         key: header.key,
         value: header.value
       }))
+    } : formState.type === 'database' ? {
+      url: formState.setting.url,
+      username: formState.setting.username,
+      password: formState.setting.password,
+      sql: formState.setting.sql
     } : {},
     parameters: JSON.parse(formState.parametersStr),
     code: formState.code,

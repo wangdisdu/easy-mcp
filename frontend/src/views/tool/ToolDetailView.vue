@@ -55,8 +55,8 @@
             <div class="info-row">
               <div class="info-label">工具类型:</div>
               <div class="info-value">
-                <a-tag :color="tool.type === 'http' ? 'blue' : 'green'">
-                  {{ tool.type === 'http' ? 'HTTP工具' : '基础工具' }}
+                <a-tag :color="getToolTypeColor(tool.type)">
+                  {{ getToolTypeName(tool.type) }}
                 </a-tag>
               </div>
             </div>
@@ -115,6 +115,20 @@
                       </template>
                     </template>
                   </a-table>
+                </div>
+              </div>
+            </template>
+
+            <!-- 数据库工具特有信息 -->
+            <template v-if="tool.type === 'database'">
+              <div class="info-row">
+                <div class="info-label">DB URL:</div>
+                <div class="info-value">{{ tool.setting?.url || '-' }}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">查询SQL:</div>
+                <div class="info-value">
+                  <pre class="sql-display">{{ tool.setting?.sql || '-' }}</pre>
                 </div>
               </div>
             </template>
@@ -611,6 +625,28 @@ const handleToggleState = async (enable) => {
     console.error(`Error ${enable ? 'enabling' : 'disabling'} tool:`, error)
   }
 }
+
+const getToolTypeColor = (type) => {
+  switch (type) {
+    case 'http':
+      return 'blue'
+    case 'database':
+      return 'purple'
+    default:
+      return 'green'
+  }
+}
+
+const getToolTypeName = (type) => {
+  switch (type) {
+    case 'http':
+      return 'HTTP工具'
+    case 'database':
+      return '数据库工具'
+    default:
+      return '基础工具'
+  }
+}
 </script>
 
 <style scoped>
@@ -824,5 +860,17 @@ const handleToggleState = async (enable) => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.sql-display {
+  background-color: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin: 0;
+  font-size: 13px;
 }
 </style>

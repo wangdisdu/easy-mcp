@@ -7,6 +7,8 @@ from typing import Optional, List, Dict, Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from api.constants import ToolType
+
 
 class ToolBase(BaseModel):
     """
@@ -15,7 +17,7 @@ class ToolBase(BaseModel):
     Attributes:
         name: Tool name
         description: Tool description
-        type: Tool type (basic or http)
+        type: Tool type (basic, http, or database)
         setting: Advanced settings (JSON string)
         parameters: Tool parameters (JSON Schema)
         code: Tool implementation code
@@ -23,12 +25,24 @@ class ToolBase(BaseModel):
 
     name: str = Field(description="Tool name")
     description: Optional[str] = Field(default=None, description="Tool description")
-    type: str = Field(default="basic", description="Tool type (basic or http)")
+    type: str = Field(
+        default=ToolType.BASIC, description="Tool type (basic, http, or database)"
+    )
     setting: Dict[str, Any] = Field(
         default_factory=dict, description="Advanced settings (JSON string)"
     )
     parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
     code: str = Field(description="Tool implementation code")
+
+    @field_validator("type")
+    @classmethod
+    def validate_tool_type(cls, v):
+        """Validate tool type."""
+        if not ToolType.is_valid(v):
+            raise ValueError(
+                f"Invalid tool type: {v}. Valid types are: {ToolType.ALL_TYPES}"
+            )
+        return v
 
 
 class ToolCreate(ToolBase):
@@ -122,7 +136,7 @@ class ToolDeployBase(BaseModel):
     Attributes:
         version: Version number
         parameters: Tool parameters (JSON Schema)
-        type: Tool type (basic or http)
+        type: Tool type (basic, http, or database)
         setting: Advanced settings (JSON string)
         code: Tool implementation code
         description: Version description
@@ -130,7 +144,9 @@ class ToolDeployBase(BaseModel):
 
     version: int = Field(description="Version number")
     parameters: Dict[str, Any] = Field(description="Tool parameters (JSON Schema)")
-    type: str = Field(default="basic", description="Tool type (basic or http)")
+    type: str = Field(
+        default=ToolType.BASIC, description="Tool type (basic, http, or database)"
+    )
     setting: Dict[str, Any] = Field(
         default_factory=dict, description="Advanced settings (JSON string)"
     )

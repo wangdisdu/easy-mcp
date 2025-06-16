@@ -18,13 +18,17 @@
             </a-button>
             <template #overlay>
               <a-menu>
-                <a-menu-item key="basic" @click="router.push('/tool/create?type=basic')">
-                  <ToolOutlined />
+                <a-menu-item key="basic" @click="createTool('basic')">
+                  <template #icon><ToolOutlined /></template>
                   基础工具
                 </a-menu-item>
-                <a-menu-item key="http" @click="router.push('/tool/create?type=http')">
-                  <GlobalOutlined />
+                <a-menu-item key="http" @click="createTool('http')">
+                  <template #icon><ApiOutlined /></template>
                   HTTP工具
+                </a-menu-item>
+                <a-menu-item key="database" @click="createTool('database')">
+                  <template #icon><DatabaseOutlined /></template>
+                  数据库工具
                 </a-menu-item>
               </a-menu>
             </template>
@@ -80,8 +84,8 @@
 
           <!-- 类型列 -->
           <template v-else-if="column.key === 'type'">
-            <a-tag :color="record.type === 'http' ? 'blue' : 'green'">
-              {{ record.type === 'http' ? 'HTTP工具' : '基础工具' }}
+            <a-tag :color="getToolTypeColor(record.type)">
+              {{ getToolTypeName(record.type) }}
             </a-tag>
           </template>
 
@@ -174,7 +178,8 @@ import {
   ToolOutlined,
   CloudOutlined,
   GlobalOutlined,
-  BugOutlined
+  BugOutlined,
+  DatabaseOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp } from '../../utils/api-util'
@@ -209,7 +214,6 @@ const columns = [
   },
   {
     title: '类型',
-    dataIndex: 'type',
     key: 'type',
     width: 100
   },
@@ -314,6 +318,32 @@ const handleToggleState = async (id, enable) => {
     fetchTools()
   } catch (error) {
     console.error(`Error ${enable ? 'enabling' : 'disabling'} tool:`, error)
+  }
+}
+
+const createTool = (type) => {
+  router.push(`/tool/create?type=${type}`)
+}
+
+const getToolTypeColor = (type) => {
+  switch (type) {
+    case 'http':
+      return 'blue'
+    case 'database':
+      return 'purple'
+    default:
+      return 'green'
+  }
+}
+
+const getToolTypeName = (type) => {
+  switch (type) {
+    case 'http':
+      return 'HTTP工具'
+    case 'database':
+      return '数据库工具'
+    default:
+      return '基础工具'
   }
 }
 </script>

@@ -34,9 +34,13 @@ from api.schemas.tool_schema import (
     BuiltinToolListResponse,
 )
 from api.services.config_service import ConfigService
+from api.services.func_service import FuncService
 from api.services.tool_log_service import ToolLogService
 from api.utils.audit_util import audit
 from api.utils.time_util import get_current_unix_ms
+from api.mybatisx import MyBatisXml
+from api.config import BASE_DIR
+from api.constants import ToolType
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -131,6 +135,128 @@ class ToolService:
 
         return list(tools), total
 
+    def _load_function_code(self, file_path: str) -> str:
+        """
+        Load function code from file.
+
+        Args:
+            file_path: Path to the function file
+
+        Returns:
+            str: Function code content
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except FileNotFoundError:
+            logger.error(f"Function file not found: {file_path}")
+            raise
+        except Exception as e:
+            logger.error(f"Error reading function file {file_path}: {str(e)}")
+            raise
+
+    async def _ensure_http_func(
+        self, tool_data: ToolCreate, current_user: Optional[str] = None
+    ) -> None:
+        """
+        Ensure easy_http_call function exists for HTTP tools.
+
+        Args:
+            tool_data: Tool data
+            current_user: Current username
+        """
+        # Check if easy_http_call function exists
+        result = await self.db.execute(
+            select(TbFunc).where(TbFunc.name == "easy_http_call")
+        )
+        http_func = result.scalars().first()
+
+        if not http_func:
+            # Load function code from file
+            code_file_path = os.path.join(
+                BASE_DIR, "sample", "easy_http_call", "easy_http_call.py"
+            )
+            function_code = self._load_function_code(code_file_path)
+
+            # Create easy_http_call function
+            current_time = get_current_unix_ms()
+            http_func = TbFunc(
+                name="easy_http_call",
+                description="HTTP request helper function",
+                code=function_code,
+                created_at=current_time,
+                updated_at=current_time,
+                created_by=current_user,
+                updated_by=current_user,
+            )
+            self.db.add(http_func)
+            await self.db.commit()
+            await self.db.refresh(http_func)
+
+            # Auto-deploy the function
+            func_service = FuncService(self.db)
+            await func_service.deploy_func(
+                http_func.id, "Auto-deployment for HTTP tool support", current_user
+            )
+
+        # Add easy_http_call to func_ids if not already included
+        if tool_data.func_ids is None:
+            tool_data.func_ids = []
+        if http_func.id not in tool_data.func_ids:
+            tool_data.func_ids.append(http_func.id)
+
+    async def _ensure_database_func(
+        self, tool_data: ToolCreate, current_user: Optional[str] = None
+    ) -> None:
+        """
+        Ensure easy_database_call function exists for database tools.
+
+        Args:
+            tool_data: Tool data
+            current_user: Current username
+        """
+        # Check if easy_database_call function exists
+        result = await self.db.execute(
+            select(TbFunc).where(TbFunc.name == "easy_database_call")
+        )
+        database_func = result.scalars().first()
+
+        if not database_func:
+            # Load function code from file
+            code_file_path = os.path.join(
+                BASE_DIR, "sample", "easy_database_call", "easy_database_call.py"
+            )
+            function_code = self._load_function_code(code_file_path)
+
+            # Create easy_database_call function
+            current_time = get_current_unix_ms()
+            database_func = TbFunc(
+                name="easy_database_call",
+                description="Database query helper function with direct driver support",
+                code=function_code,
+                created_at=current_time,
+                updated_at=current_time,
+                created_by=current_user,
+                updated_by=current_user,
+            )
+            self.db.add(database_func)
+            await self.db.commit()
+            await self.db.refresh(database_func)
+
+            # Auto-deploy the function
+            func_service = FuncService(self.db)
+            await func_service.deploy_func(
+                database_func.id,
+                "Auto-deployment for database tool support",
+                current_user,
+            )
+
+        # Add easy_database_call to func_ids if not already included
+        if tool_data.func_ids is None:
+            tool_data.func_ids = []
+        if database_func.id not in tool_data.func_ids:
+            tool_data.func_ids.append(database_func.id)
+
     @audit(operation_type="create", object_type="tool")
     async def create_tool(
         self, tool_data: ToolCreate, current_user: Optional[str] = None
@@ -156,98 +282,11 @@ class ToolService:
             )
             raise ToolAlreadyExistsError(name=tool_data.name)
 
-        # For HTTP tools, ensure easy_http_call function exists
-        if tool_data.type == "http":
-            # Check if easy_http_call function exists
-            result = await self.db.execute(
-                select(TbFunc).where(TbFunc.name == "easy_http_call")
-            )
-            http_func = result.scalars().first()
-
-            if not http_func:
-                # Create easy_http_call function
-                current_time = get_current_unix_ms()
-                http_func = TbFunc(
-                    name="easy_http_call",
-                    description="HTTP request helper function",
-                    code='''def easy_http_call(method: str, url: str, headers: list, parameters: dict, config: dict) -> dict:
-    """
-    Make HTTP request with parameters.
-
-    Args:
-        method: HTTP method (GET, POST, PUT, DELETE)
-        url: Request URL
-        headers: Request headers
-        parameters: Request parameters
-        config: Tool configuration
-    
-    Returns:
-        dict: Response data
-    """
-    import requests
-    import json
-    
-    # Process URL parameters
-    if parameters:
-        for key, value in list(parameters.items()):
-            var = f"{{{key}}}"
-            if var in url:
-                url = url.replace(var, str(value))
-                del parameters[key]
-    
-    # Process header parameters
-    http_headers = {}
-    if headers:
-        for header in headers:
-            header_key = header["key"]
-            header_value = header["value"]
-            if parameters:
-                for key, value in list(parameters.items()):
-                    var = f"{{{key}}}"
-                    if var in header_value:
-                        header_value = header_value.replace(var, str(value))
-                        del parameters[key]
-            http_headers[header_key] = header_value
-
-    print(f"url: {url}")
-    print(f"method: {method}")
-    print(f"headers: {http_headers}")
-    print(f"body: {parameters}")
-    
-    # Prepare request kwargs
-    request_kwargs = {
-        "method": method,
-        "url": url,
-        "headers": http_headers,
-        "timeout": 30
-    }
-    
-    # Only add json parameter if there are remaining parameters
-    if parameters:
-        request_kwargs["json"] = parameters
-    
-    # Make request
-    response = requests.request(**request_kwargs)
-
-    # Return response
-    if response.headers.get('content-type', '').startswith('application/json'):
-        return response.json()
-    return response.text
-''',
-                    created_at=current_time,
-                    updated_at=current_time,
-                    created_by=current_user,
-                    updated_by=current_user,
-                )
-                self.db.add(http_func)
-                await self.db.commit()
-                await self.db.refresh(http_func)
-
-            # Add easy_http_call to func_ids if not already included
-            if tool_data.func_ids is None:
-                tool_data.func_ids = []
-            if http_func.id not in tool_data.func_ids:
-                tool_data.func_ids.append(http_func.id)
+        # Ensure required functions exist based on tool type
+        if tool_data.type == ToolType.HTTP:
+            await self._ensure_http_func(tool_data, current_user)
+        elif tool_data.type == ToolType.DATABASE:
+            await self._ensure_database_func(tool_data, current_user)
 
         # Create tool
         current_time = get_current_unix_ms()
@@ -774,10 +813,19 @@ class ToolService:
 
             setting = json.loads(tool.setting)
             # For HTTP tools, add url and headers from setting
-            if tool.type == "http" and tool.setting:
+            if tool.type == "http" and setting:
                 namespace["url"] = setting["url"]
                 namespace["method"] = setting["method"]
                 namespace["headers"] = setting["headers"]
+
+            if tool.type == "database" and setting:
+                sql_content = setting["sql"]
+                mapper = MyBatisXml(sql_content)
+                sql = mapper.get_sql(parameters)
+                namespace["url"] = setting["url"]
+                namespace["username"] = setting["username"]
+                namespace["password"] = setting["password"]
+                namespace["sql"] = sql
 
             # Execute the module code directly
             output_buffer = io.StringIO()
