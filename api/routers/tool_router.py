@@ -26,6 +26,7 @@ from api.schemas.tool_schema import (
     ToolMcpResponse,
     ToolMcpExecuteRequest,
 )
+from api.schemas.tag_schema import TagResponse, ToolTagRequest
 from api.services.tool_service import ToolService
 from api.utils.security_util import get_current_user
 
@@ -40,6 +41,9 @@ async def get_tools(
     search: Optional[str] = Query(
         None, description="Search term for name or description"
     ),
+    tag_ids: Optional[str] = Query(
+        None, description="Comma-separated tag IDs to filter by"
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: TbUser = Depends(get_current_user),
 ):
@@ -50,6 +54,7 @@ async def get_tools(
         page: Page number
         size: Page size
         search: Search term
+        tag_ids: Comma-separated tag IDs to filter by (e.g., "1,2,3")
         db: Database session
         current_user: Current user
 
@@ -57,11 +62,28 @@ async def get_tools(
         PaginatedResponse[ToolResponse]: Paginated list of tools
     """
     service = ToolService(db)
-    tools, total = await service.query_tools(page, size, search)
 
-    return PaginatedResponse(
-        data=[ToolResponse.model_validate(tool) for tool in tools], total=total
-    )
+    # Parse comma-separated tag_ids string to list of integers
+    parsed_tag_ids = None
+    if tag_ids:
+        try:
+            parsed_tag_ids = [
+                int(tag_id.strip()) for tag_id in tag_ids.split(",") if tag_id.strip()
+            ]
+        except ValueError:
+            parsed_tag_ids = None
+
+    tools, total = await service.query_tools(page, size, search, parsed_tag_ids)
+
+    # Load tags for each tool
+    tool_responses = []
+    for tool in tools:
+        tags = await service.get_tool_tags(tool.id)
+        tool_dict = tool.__dict__.copy()
+        tool_dict["tags"] = [tag.__dict__ for tag in tags]
+        tool_responses.append(ToolResponse.model_validate(tool_dict))
+
+    return PaginatedResponse(data=tool_responses, total=total)
 
 
 @router.post("", response_model=Response[ToolResponse])
@@ -134,7 +156,13 @@ async def get_tool(
     service = ToolService(db)
     tool = await service.get_tool_by_id(tool_id)
 
-    return Response(data=ToolResponse.model_validate(tool) if tool else None)
+    if tool:
+        tags = await service.get_tool_tags(tool.id)
+        tool_dict = tool.__dict__.copy()
+        tool_dict["tags"] = [tag.__dict__ for tag in tags]
+        return Response(data=ToolResponse.model_validate(tool_dict))
+    else:
+        return Response(data=None)
 
 
 @router.put("/{tool_id}", response_model=Response[ToolResponse])
@@ -510,3 +538,54 @@ async def execute_mcp_tool(
         return Response(data=result)
     except ToolExecutionError as e:
         return Response(data=e.description)
+
+
+@router.get("/{tool_id}/tags", response_model=Response[List[TagResponse]])
+async def get_tool_tags(
+    tool_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Get tags associated with a tool.
+
+    Args:
+        tool_id: Tool ID
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[List[TagResponse]]: List of tags associated with the tool
+    """
+    service = ToolService(db)
+    tags = await service.get_tool_tags(tool_id)
+
+    return Response(data=[TagResponse.model_validate(tag.__dict__) for tag in tags])
+
+
+@router.put("/{tool_id}/tags", response_model=Response[None])
+async def set_tool_tags(
+    tool_id: int,
+    tag_request: ToolTagRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: TbUser = Depends(get_current_user),
+):
+    """
+    Set tags for a tool (replace all existing tags).
+
+    This is the only way to manage tool tags - it completely replaces
+    all existing tags with the provided list.
+
+    Args:
+        tool_id: Tool ID
+        tag_request: Tag request data containing list of tag IDs
+        db: Database session
+        current_user: Current user
+
+    Returns:
+        Response[None]: Success response
+    """
+    service = ToolService(db)
+    await service.set_tool_tags(tool_id, tag_request.tag_ids, current_user.username)
+
+    return Response(data=None, message="Tags set successfully")

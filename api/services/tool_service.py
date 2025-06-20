@@ -26,6 +26,7 @@ from api.errors.tool_error import (
 from api.models.tb_config import TbConfig
 from api.models.tb_func import TbFunc
 from api.models.tb_tool import TbTool, TbToolDeploy, TbToolFunc, TbToolConfig
+from api.models.tb_tag import TbTag, TbToolTag
 from api.schemas.config_schema import ConfigCreate
 from api.schemas.tool_schema import (
     ToolCreate,
@@ -87,7 +88,11 @@ class ToolService:
         return result.scalars().first()
 
     async def query_tools(
-        self, page: int = 1, size: int = 20, search: Optional[str] = None
+        self,
+        page: int = 1,
+        size: int = 20,
+        search: Optional[str] = None,
+        tag_ids: Optional[List[int]] = None,
     ) -> Tuple[List[TbTool], int]:
         """
         Query tools with pagination.
@@ -96,13 +101,23 @@ class ToolService:
             page: Page number (1-based)
             size: Page size
             search: Search term for name or description
+            tag_ids: List of tag IDs to filter by
 
         Returns:
             Tuple[List[TbTool], int]: List of tools and total count
         """
         query = select(TbTool)
 
-        # Apply filters
+        # Apply tag filter
+        if tag_ids:
+            # Join with tool_tag table to filter by tags
+            query = (
+                query.join(TbToolTag, TbTool.id == TbToolTag.tool_id)
+                .where(TbToolTag.tag_id.in_(tag_ids))
+                .distinct()
+            )
+
+        # Apply search filter
         if search:
             query = query.where(
                 or_(
@@ -112,9 +127,15 @@ class ToolService:
             )
 
         # Count total
-        count_query = select(func.count(TbTool.id))
+        count_query = select(func.count(func.distinct(TbTool.id)))
 
-        # Apply the same filters to count query
+        # Apply tag filter to count query
+        if tag_ids:
+            count_query = count_query.join(
+                TbToolTag, TbTool.id == TbToolTag.tool_id
+            ).where(TbToolTag.tag_id.in_(tag_ids))
+
+        # Apply search filter to count query
         if search:
             count_query = count_query.where(
                 or_(
@@ -232,7 +253,7 @@ class ToolService:
             current_time = get_current_unix_ms()
             database_func = TbFunc(
                 name="easy_database_call",
-                description="Database query helper function with direct driver support",
+                description="Database query helper function",
                 code=function_code,
                 created_at=current_time,
                 updated_at=current_time,
@@ -1058,3 +1079,64 @@ class ToolService:
         except Exception as e:
             logger.error(f"Error importing tool {tool_id}: {str(e)}")
             raise ToolNotFoundError(name=tool_id)
+
+    async def get_tool_tags(self, tool_id: int) -> List[TbTag]:
+        """
+        Get tags associated with a tool.
+
+        Args:
+            tool_id: Tool ID
+
+        Returns:
+            List[TbTag]: List of tags associated with the tool
+        """
+        result = await self.db.execute(
+            select(TbTag)
+            .join(TbToolTag, TbTag.id == TbToolTag.tag_id)
+            .where(TbToolTag.tool_id == tool_id)
+            .order_by(TbTag.name)
+        )
+        return list(result.scalars().all())
+
+    async def set_tool_tags(
+        self, tool_id: int, tag_ids: List[int], current_user: str
+    ) -> None:
+        """
+        Set tags for a tool (replace all existing tags).
+
+        Args:
+            tool_id: Tool ID
+            tag_ids: List of tag IDs to set
+            current_user: Current user
+
+        Raises:
+            ToolNotFoundError: If tool not found
+        """
+        # Check if tool exists
+        tool = await self.get_tool_by_id(tool_id)
+        if not tool:
+            raise ToolNotFoundError(tool_id=tool_id)
+
+        # Remove all existing tag associations
+        await self.db.execute(
+            TbToolTag.__table__.delete().where(TbToolTag.tool_id == tool_id)
+        )
+
+        # Commit the deletion first
+        await self.db.commit()
+
+        # Add new tag associations
+        current_time = get_current_unix_ms()
+        for tag_id in tag_ids:
+            tool_tag = TbToolTag(
+                tool_id=tool_id,
+                tag_id=tag_id,
+                created_at=current_time,
+                created_by=current_user,
+            )
+            self.db.add(tool_tag)
+
+        # Commit the additions
+        await self.db.commit()
+
+        logger.info(f"Set tags {tag_ids} for tool {tool_id} by {current_user}")

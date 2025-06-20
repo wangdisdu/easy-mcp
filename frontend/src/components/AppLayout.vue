@@ -35,6 +35,16 @@
           <span>工具管理</span>
           <router-link to="/tool" />
         </a-menu-item>
+        <a-menu-item key="tool-log">
+          <template #icon><ContainerOutlined /></template>
+          <span>工具日志</span>
+          <router-link to="/tool-log" />
+        </a-menu-item>
+        <a-menu-item key="tag">
+          <template #icon><TagOutlined /></template>
+          <span>标签管理</span>
+          <router-link to="/tag" />
+        </a-menu-item>
         <a-menu-item key="func">
           <template #icon><FunctionOutlined /></template>
           <span>函数管理</span>
@@ -50,18 +60,13 @@
           <span>用户管理</span>
           <router-link to="/user" />
         </a-menu-item>
-        <a-menu-item key="tool-log">
-          <template #icon><FileSearchOutlined /></template>
-          <span>工具日志</span>
-          <router-link to="/tool-log" />
-        </a-menu-item>
         <a-menu-item key="audit">
-          <template #icon><FileSearchOutlined /></template>
+          <template #icon><AuditOutlined /></template>
           <span>审计日志</span>
           <router-link to="/audit" />
         </a-menu-item>
         <a-menu-item key="log">
-          <template #icon><FileOutlined /></template>
+          <template #icon><FileSearchOutlined /></template>
           <span>系统日志</span>
           <router-link to="/log" />
         </a-menu-item>
@@ -100,13 +105,15 @@ import { useAuthStore } from '../stores/auth'
 import {
   DashboardOutlined,
   ToolOutlined,
+  ContainerOutlined,
   FunctionOutlined,
   SettingOutlined,
   UserOutlined,
+  AuditOutlined,
   FileSearchOutlined,
-  FileOutlined,
   LogoutOutlined,
-  DownOutlined
+  DownOutlined,
+  TagOutlined
 } from '@ant-design/icons-vue'
 
 const props = defineProps({

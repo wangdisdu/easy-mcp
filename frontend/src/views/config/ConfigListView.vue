@@ -81,6 +81,8 @@
         width="800px"
         :footer="null"
         @cancel="closeConfigModal"
+        ok-text="确定"
+        cancel-text="取消"
       >
         <template v-if="currentConfig">
           <div v-if="!currentConfig.conf_schema || Object.keys(currentConfig.conf_schema).length === 0" class="empty-schema">

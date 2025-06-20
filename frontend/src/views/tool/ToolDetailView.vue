@@ -61,6 +61,27 @@
               </div>
             </div>
             <div class="info-row">
+              <div class="info-label">工具标签:</div>
+              <div class="info-value">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <a-tag
+                    v-for="tag in tool.tags"
+                    :key="tag.id"
+                    style="margin: 0"
+                  >
+                    {{ tag.name }}
+                  </a-tag>
+                  <span v-if="!tool.tags || tool.tags.length === 0" style="color: #999;">
+                    无标签
+                  </span>
+                  <a-button type="link" size="small" @click="showTagManager = true">
+                    <template #icon><TagOutlined /></template>
+                    管理标签
+                  </a-button>
+                </div>
+              </div>
+            </div>
+            <div class="info-row">
               <div class="info-label">状态:</div>
               <div class="info-value">
                 <a-tag :color="tool.is_enabled ? 'green' : 'red'">
@@ -237,6 +258,8 @@
             :title="`工具代码 (v${selectedVersion})`"
             width="800px"
             :footer="null"
+            ok-text="确定"
+            cancel-text="取消"
           >
             <pre class="code-display">{{ versionCode }}</pre>
           </a-modal>
@@ -338,6 +361,13 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 标签管理对话框 -->
+    <tool-tag-manager
+      v-model:visible="showTagManager"
+      :tool-id="parseInt(toolId)"
+      @updated="fetchToolData"
+    />
   </app-layout>
 </template>
 
@@ -352,12 +382,14 @@ import {
   SettingOutlined,
   FunctionOutlined,
   PlayCircleOutlined,
-  PauseCircleOutlined
+  PauseCircleOutlined,
+  TagOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { callApi, formatTimestamp, validateJson } from '../../utils/api-util'
 import AppLayout from '../../components/AppLayout.vue'
 import MonacoEditor from '../../components/MonacoEditor.vue'
+import ToolTagManager from '../../components/ToolTagManager.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -379,6 +411,7 @@ const selectedVersion = ref(null)
 const versionCode = ref('')
 const selectedRecord = ref(null)
 const rollingBack = ref(false)
+const showTagManager = ref(false)
 
 // Debug functionality moved to ToolDebugView.vue
 

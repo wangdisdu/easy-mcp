@@ -73,6 +73,8 @@
       :title="isNewProperty ? '添加参数' : '编辑参数'"
       @ok="saveProperty"
       @cancel="propertyModalVisible = false"
+      ok-text="确定"
+      cancel-text="取消"
     >
       <a-form :model="currentProperty" layout="vertical">
         <a-form-item label="参数名称" required>

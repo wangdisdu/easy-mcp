@@ -40,6 +40,9 @@ const LogListView = () => import('../views/log/LogListView.vue')
 // 工具日志相关页面
 const ToolLogListView = () => import('../views/tool-call/ToolLogListView.vue')
 
+// 标签相关页面
+const TagListView = () => import('../views/tag/TagListView.vue')
+
 const routes = [
   {
     path: '/',
@@ -188,6 +191,13 @@ const routes = [
     path: '/tool-log',
     name: 'tool-log-list',
     component: ToolLogListView,
+    meta: { requiresAuth: true }
+  },
+  // Tag routes
+  {
+    path: '/tag',
+    name: 'tag-list',
+    component: TagListView,
     meta: { requiresAuth: true }
   }
 ]

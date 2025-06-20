@@ -87,6 +87,7 @@ class ToolResponse(ToolBase):
         id: Tool ID
         is_enabled: Whether the tool is enabled
         current_version: Current version number
+        tags: List of tags associated with the tool
         created_at: Creation time (UnixMS)
         updated_at: Update time (UnixMS)
         created_by: Creator username
@@ -97,6 +98,9 @@ class ToolResponse(ToolBase):
     is_enabled: bool = Field(description="Whether the tool is enabled")
     current_version: Optional[int] = Field(
         default=None, description="Current version number"
+    )
+    tags: List["TagResponse"] = Field(
+        default_factory=list, description="List of tags associated with the tool"
     )
     created_at: Optional[int] = Field(
         default=None, description="Creation time (UnixMS)"
@@ -287,3 +291,10 @@ class ToolMcpExecuteRequest(BaseModel):
     """MCP tool execution request model."""
 
     parameters: Dict[str, Any] = Field(..., description="Tool execution parameters")
+
+
+# Import TagResponse for forward reference
+from api.schemas.tag_schema import TagResponse
+
+# Update forward references
+ToolResponse.model_rebuild()

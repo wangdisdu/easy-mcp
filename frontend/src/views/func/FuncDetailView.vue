@@ -101,6 +101,8 @@
             :title="`函数代码 (v${selectedVersion})`"
             width="800px"
             :footer="null"
+            ok-text="确定"
+            cancel-text="取消"
           >
             <pre class="code-display">{{ versionCode }}</pre>
           </a-modal>

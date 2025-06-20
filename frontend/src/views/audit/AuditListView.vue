@@ -21,6 +21,7 @@
             <a-select-option value="delete">删除</a-select-option>
             <a-select-option value="deploy">发布</a-select-option>
             <a-select-option value="rollback">回滚</a-select-option>
+            <a-select-option value="import">导入</a-select-option>
           </a-select>
 
           <a-select
@@ -33,6 +34,7 @@
             <a-select-option value="tool">工具</a-select-option>
             <a-select-option value="func">函数</a-select-option>
             <a-select-option value="config">配置</a-select-option>
+            <a-select-option value="tag">标签</a-select-option>
           </a-select>
 
           <a-input
@@ -133,6 +135,8 @@
         title="操作详情"
         width="800px"
         :footer="null"
+        ok-text="确定"
+        cancel-text="取消"
       >
         <pre v-if="selectedAudit">{{ JSON.stringify(selectedAudit.details, null, 2) }}</pre>
       </a-modal>
@@ -305,7 +309,8 @@ const getActionText = (action) => {
     'update': '更新',
     'delete': '删除',
     'deploy': '发布',
-    'rollback': '回滚'
+    'rollback': '回滚',
+    'import': '导入'
   }
 
   return actionMap[action] || action
@@ -328,7 +333,8 @@ const getResourceText = (resourceType) => {
     'user': '用户',
     'tool': '工具',
     'func': '函数',
-    'config': '配置'
+    'config': '配置',
+    'tag': '标签'
   }
 
   return resourceMap[resourceType] || resourceType

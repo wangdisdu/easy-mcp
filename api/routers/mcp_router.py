@@ -56,17 +56,38 @@ class McpServerManager:
         self.server = None
         self.transport = None
 
-    async def _get_enabled_tools(self, db: AsyncSession) -> List[McpTool]:
+    async def _get_enabled_tools(
+        self, db: AsyncSession, tag_filter: Optional[str] = None
+    ) -> List[McpTool]:
         """获取所有启用的工具并转换为 MCP 工具格式
 
         Args:
             db: 数据库会话
+            tag_filter: 标签过滤器，如果提供则只返回包含该标签的工具
 
         Returns:
             List[McpTool]: MCP 工具列表
         """
         tool_service = ToolService(db)
-        tools = await tool_service.query_tools(page=1, size=1000)
+
+        # 如果有标签过滤，先获取该标签的ID
+        tag_ids = None
+        if tag_filter:
+            # 这里假设tag_filter是标签名称，需要转换为ID
+            # 你也可以根据需要修改为直接传递标签ID
+            from api.services.tag_service import TagService
+
+            tag_service = TagService(db)
+            tags, _ = await tag_service.query_tags(page=1, size=1000, search=tag_filter)
+            if tags:
+                # 找到匹配的标签
+                matching_tag = next(
+                    (tag for tag in tags if tag.name == tag_filter), None
+                )
+                if matching_tag:
+                    tag_ids = [matching_tag.id]
+
+        tools = await tool_service.query_tools(page=1, size=1000, tag_ids=tag_ids)
 
         # 获取所有工具（第一个元素是工具列表，第二个是总数）
         all_tools = tools[0]
@@ -81,7 +102,8 @@ class McpServerManager:
             if mcp_tool:
                 mcp_tools.append(mcp_tool)
 
-        logger.info(f"为 MCP SSE 服务器列出 {len(mcp_tools)} 个启用的工具")
+        filter_info = f" (标签过滤: {tag_filter})" if tag_filter else ""
+        logger.info(f"为 MCP SSE 服务器列出 {len(mcp_tools)} 个启用的工具{filter_info}")
         return mcp_tools
 
     def _convert_to_mcp_tool(self, tool) -> Optional[McpTool]:
@@ -239,25 +261,31 @@ def get_sse_transport():
 
 
 # SSE 连接处理
-async def handle_sse(request: FastAPIRequest, db: AsyncSession = Depends(get_db)):
+async def handle_sse(
+    request: FastAPIRequest,
+    db: AsyncSession = Depends(get_db),
+    tag_filter: Optional[str] = None,
+):
     """处理 SSE 连接
 
     Args:
         request: FastAPI 请求对象
         db: 数据库会话
+        tag_filter: 标签过滤器
 
     Returns:
         Response: 响应对象
     """
     try:
-        logger.info("处理新的 SSE 连接")
+        filter_info = f" (标签过滤: {tag_filter})" if tag_filter else ""
+        logger.info(f"处理新的 SSE 连接{filter_info}")
         # 获取 MCP 服务器和传输
         server = get_mcp_server()
         transport = get_sse_transport()
 
-        # 注册工具列表函数（使用闭包捕获数据库会话）
+        # 注册工具列表函数（使用闭包捕获数据库会话和标签过滤器）
         async def list_tools_with_db():
-            return await mcp_manager._get_enabled_tools(db)
+            return await mcp_manager._get_enabled_tools(db, tag_filter)
 
         # 注册工具执行函数（使用闭包捕获数据库会话）
         async def execute_tool_with_db(name: str, arguments: Dict[str, Any]):
@@ -294,6 +322,30 @@ async def sse_endpoint(request: FastAPIRequest, db: AsyncSession = Depends(get_d
         Response: SSE 响应
     """
     return await handle_sse(request, db)
+
+
+# 注册带标签过滤的 SSE 端点
+@router.get("/sse-{tag}")
+async def sse_tag_endpoint(
+    tag: str, request: FastAPIRequest, db: AsyncSession = Depends(get_db)
+):
+    """MCP 服务器的带标签过滤的 SSE 端点
+
+    这个端点允许根据标签过滤工具列表，实现不同用途的工具集合。
+    例如：
+    - /sse-web: 返回标签为 "web" 的工具
+    - /sse-database: 返回标签为 "database" 的工具
+    - /sse-ai: 返回标签为 "ai" 的工具
+
+    Args:
+        tag: 标签名称，用于过滤工具
+        request: FastAPI 请求对象
+        db: 数据库会话
+
+    Returns:
+        Response: SSE 响应
+    """
+    return await handle_sse(request, db, tag_filter=tag)
 
 
 # 注册消息处理端点

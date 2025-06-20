@@ -131,6 +131,8 @@
       width="800px"
       :footer="null"
       @cancel="configureModalVisible = false"
+      ok-text="确定"
+      cancel-text="取消"
     >
       <template v-if="config">
         <div v-if="!isValidSchema" class="empty-schema">
