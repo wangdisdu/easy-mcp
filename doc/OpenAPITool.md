@@ -168,42 +168,8 @@ Easy MCP能够智能处理各种复杂的参数结构：
 - 支持多环境配置
 - 灵活的基础路径设置
 
-## 立即体验：3步开始你的效率之旅
+## 📚 更多信息
 
-### 1️⃣ 快速部署
-```bash
-# 克隆项目
-git clone https://github.com/your-repo/easy-mcp
-cd easy-mcp
-
-# 一键部署
-./easy-mcp.sh deploy
-
-# 访问应用
-open http://localhost:8000
-```
-
-### 2️⃣ 登录系统
-- 用户名：`admin`
-- 密码：`admin`
-
-### 3️⃣ 开始导入
-1. 进入「工具管理」
-2. 点击「导入工具」→「OpenAPI导入」
-3. 上传你的Swagger文档
-4. 享受一键生成的快感！
-
----
-
-📞 **联系我们**
-- GitHub: [Easy MCP项目地址]
-- 技术交流群: [微信群二维码]
-- 问题反馈: [Issues链接]
-
-🔗 **相关链接**
-- [完整文档](https://github.com/your-repo/easy-mcp/blob/main/README.md)
-- [快速开始指南](https://github.com/your-repo/easy-mcp/blob/main/快速开始.md)
-
----
+- [快速开始](doc/快速开始.md) - 快速开始部署指南
 
 *Easy MCP - 让MCP工具开发变得简单高效！*
