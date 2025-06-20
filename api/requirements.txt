@@ -12,12 +12,13 @@ python-multipart==0.0.9
 aiosqlite==0.19.*
 asyncpg==0.29.*
 aiomysql==0.2.*
-# Synchronous database drivers for easy_database_call
-psycopg2-binary==2.9.*
-PyMySQL==1.1.*
 alembic==1.13.*
 PyYAML==6.0.*
 python-dotenv==1.0.*
 greenlet==3.0.*
 requests==2.31.*
 sqlparse==0.5.3
+psycopg2-binary==2.9.*
+PyMySQL==1.1.*
+clickhouse-connect==0.7.*
+cx_Oracle==8.3.*
