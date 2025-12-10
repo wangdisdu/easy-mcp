@@ -23,7 +23,7 @@ from mcp.server.lowlevel import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.database import get_db
+from api.database import get_db, get_session
 from api.services.mcp_service import MCPService
 
 # Create logger
@@ -52,18 +52,26 @@ _tag_ctx = ContextVar("mcp_stream_tag_ctx", default=None)
 async def list_tools() -> List[types.Tool]:
     """List available tools for this connection."""
     # Access context variables
-    db = _db_ctx.get()
+    # 注意：这里不再直接使用_db_ctx中的数据库会话
+    # 而是在需要时创建临时会话
     tag = _tag_ctx.get(None)
-    service = MCPService(db)
-    return await service.list_tools(tag)
+    
+    # 创建临时数据库会话
+    async with get_session() as db:
+        service = MCPService(db)
+        return await service.list_tools(tag)
 
 
 @mcp_stream_server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
     """Handle tool execution for this connection."""
-    db = _db_ctx.get()
-    service = MCPService(db)
-    return await service.call_tool(name, arguments)
+    # 注意：这里不再直接使用_db_ctx中的数据库会话
+    # 而是在需要时创建临时会话
+    
+    # 创建临时数据库会话
+    async with get_session() as db:
+        service = MCPService(db)
+        return await service.call_tool(name, arguments)
 
 
 async def _handle_request(request: Request):
@@ -92,23 +100,19 @@ async def _handle_request(request: Request):
 @router.post("/mcp")
 async def handle_stream_endpoint(
     request: Request,
-    db: AsyncSession = Depends(get_db)
 ):
     """
     Handle Streamable HTTP connection for MCP without tag filtering.
-
+    
     This endpoint provides access to all enabled tools in the system.
     Uses StreamableHTTPSessionManager for session management.
-
+    
     Args:
         request: FastAPI request object
-        db: Database session dependency
     """
-
-    # Set context variables
-    _db_ctx.set(db)
+    # 不再需要设置数据库上下文，因为我们会在需要时创建临时会话
     _tag_ctx.set(None)
-
+    
     # Handle stream connection
     await _handle_request(request)
 
@@ -117,24 +121,20 @@ async def handle_stream_endpoint(
 async def handle_stream_endpoint_with_tag(
     tag: str,
     request: Request,
-    db: AsyncSession = Depends(get_db)
 ):
     """
     Handle Streamable HTTP connection for MCP with tag filtering.
-
+    
     This endpoint provides access to tools filtered by a specific tag.
     If the tag doesn't exist, an empty tool list will be returned.
     Uses StreamableHTTPSessionManager for session management.
-
+    
     Args:
         tag: Tag name to filter tools by
         request: FastAPI request object
-        db: Database session dependency
     """
-
-    # Set context variables
-    _db_ctx.set(db)
+    # 不再需要设置数据库上下文，因为我们会在需要时创建临时会话
     _tag_ctx.set(tag)
-
+    
     # Handle stream connection
     await _handle_request(request)
