@@ -755,7 +755,7 @@ class ToolService:
         return configs
 
     async def execute_tool(
-        self, tool_id: int, parameters: Dict[str, Any], call_type: str = "mcp"
+        self, tool_id: int, parameters: Dict[str, Any], call_type: str = "mcp", headers: Optional[Dict[str, Any]] = None
     ) -> Tuple[Any, List[str]]:
         """
         Execute a tool with the given parameters.
@@ -764,6 +764,7 @@ class ToolService:
             tool_id: Tool ID
             parameters: Tool parameters
             call_type: Call type (mcp, debug)
+            headers: Tool(HTTP) headers from the request
 
         Returns:
             Tuple[Any, List[str]]: Execution result and logs
@@ -805,7 +806,6 @@ class ToolService:
 # Tool code
 {tool.code}
 """
-
             # Log the combined code for debugging
             logger.debug(f"combined code:\n{combined_code}")
 
@@ -832,12 +832,19 @@ class ToolService:
                             continue
                 namespace["config"] = config_var
 
+            # Add headers to namespace
+            namespace["headers"] = headers if headers else {}
+
             setting = json.loads(tool.setting)
             # For HTTP tools, add url and headers from setting
             if tool.type == "http" and setting:
                 namespace["url"] = setting["url"]
                 namespace["method"] = setting["method"]
-                namespace["headers"] = setting["headers"]
+                # Merge headers from setting with headers from request
+                tool_headers = setting.get("headers", {})
+                if headers:
+                    tool_headers.update(headers)
+                namespace["headers"] = tool_headers
 
             if tool.type == "database" and setting:
                 sql_content = setting["sql"]

@@ -210,10 +210,15 @@ class ToolDebugRequest(BaseModel):
 
     Attributes:
         parameters: Tool parameters
+        headers: Tool(Http) headers
     """
 
     parameters: Dict[str, Any] = Field(
         default_factory=dict, description="Tool parameters"
+    )
+
+    headers: Dict[str, Any] = Field(
+        default_factory=dict, description="Tool(Http) headers"
     )
 
 
