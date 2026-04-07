@@ -47,6 +47,54 @@ from api.constants import ToolType
 logger = logging.getLogger(__name__)
 
 
+def _merge_http_tool_headers(
+    setting_headers: Any,
+    request_headers: Optional[Dict[str, Any]],
+    request_header_keys: Optional[List[str]] = None,
+) -> List[Dict[str, str]]:
+    """
+    Build HTTP tool headers as a list of {"key", "value"} for user code (e.g. easy_http_call).
+
+    setting_headers may be a list like [{"key": "Content-Type", "value": "application/json"}]
+    or a legacy dict.
+
+    request_headers comes from the API as a dict. Only keys declared in
+    request_header_keys are allowed to override/add HTTP headers. If request_header_keys
+    is empty/None, request headers will NOT override any tool default headers.
+    """
+    merged: List[Dict[str, str]] = []
+    if isinstance(setting_headers, list):
+        for item in setting_headers:
+            if isinstance(item, dict) and "key" in item and "value" in item:
+                merged.append(
+                    {"key": str(item["key"]), "value": str(item["value"])}
+                )
+    elif isinstance(setting_headers, dict):
+        for k, v in setting_headers.items():
+            merged.append({"key": str(k), "value": str(v)})
+
+    if not request_headers:
+        return merged
+
+    allowed_keys = set()
+    if request_header_keys:
+        allowed_keys = {str(k).lower() for k in request_header_keys if k is not None}
+    if not allowed_keys:
+        return merged
+
+    index_by_key = {h["key"]: i for i, h in enumerate(merged)}
+    for req_key, req_val in request_headers.items():
+        rk = str(req_key)
+        if rk.lower() not in allowed_keys:
+            continue
+        if rk in index_by_key:
+            merged[index_by_key[rk]]["value"] = str(req_val)
+        else:
+            merged.append({"key": rk, "value": str(req_val)})
+            index_by_key[rk] = len(merged) - 1
+    return merged
+
+
 class ToolService:
     """
     Tool service.
@@ -840,11 +888,11 @@ class ToolService:
             if tool.type == "http" and setting:
                 namespace["url"] = setting["url"]
                 namespace["method"] = setting["method"]
-                # Merge headers from setting with headers from request
-                tool_headers = setting.get("headers", {})
-                if headers:
-                    tool_headers.update(headers)
-                namespace["headers"] = tool_headers
+                namespace["headers"] = _merge_http_tool_headers(
+                    setting.get("headers"),
+                    headers,
+                    setting.get("request_header_keys"),
+                )
 
             if tool.type == "database" and setting:
                 sql_content = setting["sql"]
@@ -884,7 +932,7 @@ class ToolService:
 
         except Exception as e:
             error_message = str(e)
-            logger.error(f"Tool execution error for tool {tool_id}: {error_message}")
+            logger.exception(f"Tool execution error for tool {tool_id}: {error_message}")
             raise
 
         finally:

@@ -90,6 +90,18 @@
               </template>
             </a-table>
           </a-form-item>
+
+          <a-form-item
+            label="透传请求头（白名单）"
+            extra="这里设置的请求头会透传给Http API调用的Header"
+          >
+            <a-select
+              v-model:value="formState.setting.request_header_keys"
+              mode="tags"
+              placeholder="请输入透传的 Header Key，如 Authorization、X-Tenant-Id"
+              :token-separators="[',']"
+            />
+          </a-form-item>
         </template>
 
         <!-- 数据库工具特有字段 -->
@@ -240,7 +252,8 @@ const formState = reactive({
   setting: toolType.value === 'http' ? {
     url: '',
     method: 'POST',
-    headers: [{key: "Content-Type", value: "application/json"}]
+    headers: [{key: "Content-Type", value: "application/json"}],
+    request_header_keys: []
   } : toolType.value === 'database' ? {
     url: '',
     username: '',
@@ -402,6 +415,16 @@ const fetchToolData = async () => {
         if (formState.setting.headers && !Array.isArray(formState.setting.headers)) {
           formState.setting.headers = []
         }
+        // 确保 request_header_keys 是数组格式
+        if (
+          formState.setting.request_header_keys &&
+          !Array.isArray(formState.setting.request_header_keys)
+        ) {
+          formState.setting.request_header_keys = []
+        }
+        if (!formState.setting.request_header_keys) {
+          formState.setting.request_header_keys = []
+        }
 
         // Load relationships
         fetchToolFunctions()
@@ -495,7 +518,10 @@ const prepareData = () => {
       headers: formState.setting.headers.map(header => ({
         key: header.key,
         value: header.value
-      }))
+      })),
+      request_header_keys: (formState.setting.request_header_keys || [])
+        .map(key => String(key).trim())
+        .filter(key => key)
     } : formState.type === 'database' ? {
       url: formState.setting.url,
       username: formState.setting.username,

@@ -138,6 +138,16 @@
                   </a-table>
                 </div>
               </div>
+              <div class="info-row" v-if="tool.setting?.request_header_keys?.length">
+                <div class="info-label">透传请求头:</div>
+                <div class="info-value">
+                  <a-space wrap>
+                    <a-tag v-for="key in tool.setting.request_header_keys" :key="key" color="purple">
+                      {{ key }}
+                    </a-tag>
+                  </a-space>
+                </div>
+              </div>
             </template>
 
             <!-- 数据库工具特有信息 -->
