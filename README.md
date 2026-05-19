@@ -92,6 +92,7 @@ Easy MCP 提供了直观的界面和简单的操作流程，让您能够快速�
 - [OpenAPI工具](doc/OpenAPITool.md) - Swagger Open API工具使用说明
 - [数据库工具](doc/DatabaseTool.md) - 数据库工具使用说明
 - [Http工具](doc/HttpTool.md) - Http工具使用说明
+- [MCP访问令牌](doc/MCPToken.md) - MCP 端点鉴权与访问令牌说明
 - [开发文档.md](doc/开发文档.md) - 项目开发文档
 - [Docker说明.md](doc/Docker说明.md) - 完整部署文档
 - [系统设计.md](doc/系统设计.md) - 系统架构设计

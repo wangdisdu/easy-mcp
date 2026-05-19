@@ -44,6 +44,9 @@ const ToolLogListView = () => import('../views/tool-call/ToolLogListView.vue')
 // 标签相关页面
 const TagListView = () => import('../views/tag/TagListView.vue')
 
+// 令牌相关页面
+const TokenListView = () => import('../views/token/TokenListView.vue')
+
 const routes = [
   {
     path: '/',
@@ -199,6 +202,13 @@ const routes = [
     path: '/tag',
     name: 'tag-list',
     component: TagListView,
+    meta: { requiresAuth: true }
+  },
+  // Token routes
+  {
+    path: '/token',
+    name: 'token-list',
+    component: TokenListView,
     meta: { requiresAuth: true }
   }
 ]

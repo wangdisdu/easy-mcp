@@ -146,6 +146,7 @@ class ToolService:
         size: int = 20,
         search: Optional[str] = None,
         tag_ids: Optional[List[int]] = None,
+        tool_ids: Optional[List[int]] = None,
     ) -> Tuple[List[TbTool], int]:
         """
         Query tools with pagination.
@@ -155,11 +156,22 @@ class ToolService:
             size: Page size
             search: Search term for name or description
             tag_ids: List of tag IDs to filter by
+            tool_ids: Restrict results to these tool IDs. ``None`` means no
+                restriction; an empty list means no tools match (used for
+                token scoping with least privilege).
 
         Returns:
             Tuple[List[TbTool], int]: List of tools and total count
         """
+        # Empty (but not None) tool_ids => explicitly no access.
+        if tool_ids is not None and len(tool_ids) == 0:
+            return [], 0
+
         query = select(TbTool)
+
+        # Apply tool ID scope filter
+        if tool_ids:
+            query = query.where(TbTool.id.in_(tool_ids))
 
         # Apply tag filter
         if tag_ids:
@@ -181,6 +193,10 @@ class ToolService:
 
         # Count total
         count_query = select(func.count(func.distinct(TbTool.id)))
+
+        # Apply tool ID scope filter to count query
+        if tool_ids:
+            count_query = count_query.where(TbTool.id.in_(tool_ids))
 
         # Apply tag filter to count query
         if tag_ids:

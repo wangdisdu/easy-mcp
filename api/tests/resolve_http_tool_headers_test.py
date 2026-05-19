@@ -16,9 +16,7 @@ class ResolveHttpToolHeadersTest(unittest.TestCase):
             [{"key": "Content-Type", "value": "application/json"}],
             {"authorization": "Bearer abc"},
         )
-        self.assertEqual(
-            result, [{"key": "Content-Type", "value": "application/json"}]
-        )
+        self.assertEqual(result, [{"key": "Content-Type", "value": "application/json"}])
 
     def test_double_quote_reference(self):
         """${header["xxx"]} is substituted from the request headers."""
@@ -26,9 +24,7 @@ class ResolveHttpToolHeadersTest(unittest.TestCase):
             [{"key": "Authorization", "value": '${header["authorization"]}'}],
             {"authorization": "Bearer abc"},
         )
-        self.assertEqual(
-            result, [{"key": "Authorization", "value": "Bearer abc"}]
-        )
+        self.assertEqual(result, [{"key": "Authorization", "value": "Bearer abc"}])
 
     def test_single_quote_reference(self):
         """Single-quoted reference syntax is also supported."""
@@ -44,9 +40,7 @@ class ResolveHttpToolHeadersTest(unittest.TestCase):
             [{"key": "Authorization", "value": 'Bearer ${header["x-token"]}'}],
             {"x-token": "xyz"},
         )
-        self.assertEqual(
-            result, [{"key": "Authorization", "value": "Bearer xyz"}]
-        )
+        self.assertEqual(result, [{"key": "Authorization", "value": "Bearer xyz"}])
 
     def test_missing_header_becomes_empty_string(self):
         """A reference to an absent request header resolves to empty string."""
@@ -70,9 +64,7 @@ class ResolveHttpToolHeadersTest(unittest.TestCase):
             [{"key": "Authorization", "value": '${header["Authorization"]}'}],
             {"authorization": "Bearer abc"},
         )
-        self.assertEqual(
-            result, [{"key": "Authorization", "value": "Bearer abc"}]
-        )
+        self.assertEqual(result, [{"key": "Authorization", "value": "Bearer abc"}])
 
     def test_spaces_inside_placeholder(self):
         """Whitespace inside the placeholder is tolerated."""

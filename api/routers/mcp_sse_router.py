@@ -16,13 +16,13 @@ from contextvars import ContextVar
 from typing import Dict, Any, List
 
 import mcp.types as types
-from fastapi import APIRouter, Request, Depends, BackgroundTasks
+from fastapi import APIRouter, Request, Depends
 from mcp.server.lowlevel import Server
 from mcp.server.sse import SseServerTransport
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.database import get_db, get_session
+from api.database import get_session
 from api.services.mcp_service import MCPService
+from api.utils.mcp_auth import McpAuthScope, verify_mcp_token
 
 # Create logger
 logger = logging.getLogger(__name__)
@@ -36,34 +36,32 @@ mcp_sse_transport = SseServerTransport("/messages/")
 # Initialize MCP server
 mcp_sse_server = Server("Easy MCP SSE Server")
 
-_db_ctx = ContextVar("mcp_sse_db_ctx")
 _tag_ctx = ContextVar("mcp_sse_tag_ctx", default=None)
+# Token-scoped allowed tool IDs for the current connection.
+_allowed_tools_ctx = ContextVar("mcp_sse_allowed_tools_ctx", default=None)
 
 
 @mcp_sse_server.list_tools()
 async def list_tools() -> List[types.Tool]:
     """List available tools for this connection."""
-    # Access lifespan context
-    # 注意：这里不再直接使用_db_ctx中的数据库会话
-    # 而是在需要时创建临时会话
     tag = _tag_ctx.get(None)
-    
+    allowed_tool_ids = _allowed_tools_ctx.get(None)
+
     # 创建临时数据库会话
     async with get_session() as db:
         service = MCPService(db)
-        return await service.list_tools(tag)
+        return await service.list_tools(tag, allowed_tool_ids)
 
 
 @mcp_sse_server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
     """Handle tool execution for this connection."""
-    # 注意：这里不再直接使用_db_ctx中的数据库会话
-    # 而是在需要时创建临时会话
-    
+    allowed_tool_ids = _allowed_tools_ctx.get(None)
+
     # 创建临时数据库会话
     async with get_session() as db:
         service = MCPService(db)
-        return await service.call_tool(name, arguments)
+        return await service.call_tool(name, arguments, allowed_tool_ids)
 
 
 async def _handle_request(request: Request):
@@ -93,19 +91,21 @@ async def _handle_request(request: Request):
 @router.get("/sse")
 async def handle_sse_endpoint(
     request: Request,
+    scope: McpAuthScope = Depends(verify_mcp_token),
 ):
     """
     Handle SSE connection for MCP without tag filtering.
-    
-    This endpoint provides access to all enabled tools in the system.
-    Each connection gets its own handler and server instance for concurrent safety.
-    
+
+    Requires a valid MCP access token. Tools are scoped to those associated
+    with the token.
+
     Args:
         request: FastAPI request object
+        scope: Authenticated token scope
     """
-    # 不再需要设置数据库上下文，因为我们会在需要时创建临时会话
     _tag_ctx.set(None)
-    
+    _allowed_tools_ctx.set(scope.allowed_tool_ids)
+
     # Handle SSE connection
     await _handle_request(request)
 
@@ -114,20 +114,22 @@ async def handle_sse_endpoint(
 async def handle_sse_endpoint_with_tag(
     tag: str,
     request: Request,
+    scope: McpAuthScope = Depends(verify_mcp_token),
 ):
     """
     Handle SSE connection for MCP with tag filtering.
-    
-    This endpoint provides access to tools filtered by a specific tag.
-    If the tag doesn't exist, an empty tool list will be returned.
-    
+
+    Requires a valid MCP access token. Returned tools are the intersection of
+    the tag filter and the token's associated tools.
+
     Args:
         tag: Tag name to filter tools by
         request: FastAPI request object
+        scope: Authenticated token scope
     """
-    # 不再需要设置数据库上下文，因为我们会在需要时创建临时会话
     _tag_ctx.set(tag)
-    
+    _allowed_tools_ctx.set(scope.allowed_tool_ids)
+
     # Handle SSE connection
     await _handle_request(request)
 
@@ -135,18 +137,18 @@ async def handle_sse_endpoint_with_tag(
 @router.post("/messages/{path:path}")
 async def handle_post_messages(
     request: Request,
+    scope: McpAuthScope = Depends(verify_mcp_token),
 ):
     """
     Handle POST messages for MCP.
-    
-    This endpoint handles MCP protocol messages sent via POST requests.
-    It's part of the MCP transport layer implementation.
-    
+
+    Requires a valid MCP access token. This is the client->server channel of
+    the SSE transport.
+
     Args:
         request: FastAPI request object
+        scope: Authenticated token scope
     """
-    # 不再需要设置数据库上下文
-    
     # Use the transport's handle_post_message ASGI application
     await mcp_sse_transport.handle_post_message(
         request.scope,

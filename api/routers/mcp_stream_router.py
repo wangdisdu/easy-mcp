@@ -21,10 +21,10 @@ import mcp.types as types
 from fastapi import APIRouter, Request, Depends
 from mcp.server.lowlevel import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.database import get_db, get_session
+from api.database import get_session
 from api.services.mcp_service import MCPService
+from api.utils.mcp_auth import McpAuthScope, verify_mcp_token
 
 # Create logger
 logger = logging.getLogger(__name__)
@@ -43,35 +43,32 @@ mcp_stream_session_manager = StreamableHTTPSessionManager(
     stateless=True,
 )
 
-# Context variables for database and tag filtering
-_db_ctx = ContextVar("mcp_stream_db_ctx")
+# Context variables for tag filtering and token-scoped tool access
 _tag_ctx = ContextVar("mcp_stream_tag_ctx", default=None)
+_allowed_tools_ctx = ContextVar("mcp_stream_allowed_tools_ctx", default=None)
 
 
 @mcp_stream_server.list_tools()
 async def list_tools() -> List[types.Tool]:
     """List available tools for this connection."""
-    # Access context variables
-    # 注意：这里不再直接使用_db_ctx中的数据库会话
-    # 而是在需要时创建临时会话
     tag = _tag_ctx.get(None)
-    
+    allowed_tool_ids = _allowed_tools_ctx.get(None)
+
     # 创建临时数据库会话
     async with get_session() as db:
         service = MCPService(db)
-        return await service.list_tools(tag)
+        return await service.list_tools(tag, allowed_tool_ids)
 
 
 @mcp_stream_server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
     """Handle tool execution for this connection."""
-    # 注意：这里不再直接使用_db_ctx中的数据库会话
-    # 而是在需要时创建临时会话
-    
+    allowed_tool_ids = _allowed_tools_ctx.get(None)
+
     # 创建临时数据库会话
     async with get_session() as db:
         service = MCPService(db)
-        return await service.call_tool(name, arguments)
+        return await service.call_tool(name, arguments, allowed_tool_ids)
 
 
 async def _handle_request(request: Request):
@@ -100,19 +97,21 @@ async def _handle_request(request: Request):
 @router.post("/mcp")
 async def handle_stream_endpoint(
     request: Request,
+    scope: McpAuthScope = Depends(verify_mcp_token),
 ):
     """
     Handle Streamable HTTP connection for MCP without tag filtering.
-    
-    This endpoint provides access to all enabled tools in the system.
-    Uses StreamableHTTPSessionManager for session management.
-    
+
+    Requires a valid MCP access token. Tools are scoped to those associated
+    with the token.
+
     Args:
         request: FastAPI request object
+        scope: Authenticated token scope
     """
-    # 不再需要设置数据库上下文，因为我们会在需要时创建临时会话
     _tag_ctx.set(None)
-    
+    _allowed_tools_ctx.set(scope.allowed_tool_ids)
+
     # Handle stream connection
     await _handle_request(request)
 
@@ -121,20 +120,21 @@ async def handle_stream_endpoint(
 async def handle_stream_endpoint_with_tag(
     tag: str,
     request: Request,
+    scope: McpAuthScope = Depends(verify_mcp_token),
 ):
     """
     Handle Streamable HTTP connection for MCP with tag filtering.
-    
-    This endpoint provides access to tools filtered by a specific tag.
-    If the tag doesn't exist, an empty tool list will be returned.
-    Uses StreamableHTTPSessionManager for session management.
-    
+
+    Requires a valid MCP access token. Returned tools are the intersection of
+    the tag filter and the token's associated tools.
+
     Args:
         tag: Tag name to filter tools by
         request: FastAPI request object
+        scope: Authenticated token scope
     """
-    # 不再需要设置数据库上下文，因为我们会在需要时创建临时会话
     _tag_ctx.set(tag)
-    
+    _allowed_tools_ctx.set(scope.allowed_tool_ids)
+
     # Handle stream connection
     await _handle_request(request)

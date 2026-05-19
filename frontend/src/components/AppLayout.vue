@@ -45,6 +45,11 @@
           <span>标签管理</span>
           <router-link to="/tag" />
         </a-menu-item>
+        <a-menu-item key="token">
+          <template #icon><KeyOutlined /></template>
+          <span>访问令牌</span>
+          <router-link to="/token" />
+        </a-menu-item>
         <a-menu-item key="func">
           <template #icon><FunctionOutlined /></template>
           <span>函数管理</span>
@@ -113,7 +118,8 @@ import {
   FileSearchOutlined,
   LogoutOutlined,
   DownOutlined,
-  TagOutlined
+  TagOutlined,
+  KeyOutlined
 } from '@ant-design/icons-vue'
 
 const props = defineProps({

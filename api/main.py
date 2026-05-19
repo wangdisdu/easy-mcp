@@ -16,7 +16,14 @@ from api.middleware.error_middleware import ServiceErrorMiddleware
 from api.middleware.request_id_middleware import RequestIdMiddleware
 
 # Import models to ensure they are registered with SQLModel
-from api.models import tb_user, tb_tool, tb_func, tb_config, tb_tag  # Import all models
+from api.models import (
+    tb_user,
+    tb_tool,
+    tb_func,
+    tb_config,
+    tb_tag,
+    tb_token,
+)  # Import all models
 from api.routers import (
     auth_router,
     user_router,
@@ -31,6 +38,7 @@ from api.routers import (
     static_router,
     openapi_router,
     tag_router,
+    token_router,
 )
 from api.routers.mcp_stream_router import mcp_stream_session_manager
 from api.utils.init_admin import init_admin_user
@@ -111,6 +119,7 @@ app.include_router(log_router.router, prefix="/api/v1")
 app.include_router(openapi_router.router, prefix="/api/v1")
 app.include_router(tool_log_router.router, prefix="/api/v1")
 app.include_router(tag_router.router, prefix="/api/v1")
+app.include_router(token_router.router, prefix="/api/v1")
 
 # Add MCP routers
 app.include_router(mcp_sse_router.router)

@@ -37,12 +37,18 @@ class MCPService:
         self.db = db
         self._tool_service = ToolService(db)
 
-    async def list_tools(self, tag_filter: Optional[str] = None) -> List[types.Tool]:
+    async def list_tools(
+        self,
+        tag_filter: Optional[str] = None,
+        allowed_tool_ids: Optional[List[int]] = None,
+    ) -> List[types.Tool]:
         """
         Get all enabled tools from database and convert to MCP Tool format.
-        
+
         Args:
             tag_filter: Optional tag name to filter tools by
+            allowed_tool_ids: Token scope. ``None`` means no restriction; an
+                empty list means the token is authorized for no tools.
 
         Returns:
             List of MCP Tool objects for enabled tools
@@ -54,7 +60,9 @@ class MCPService:
                 return []  # Tag not found
 
             # Get all tools using pagination
-            all_tools = await self._get_all_tools_paginated(tag_ids)
+            all_tools = await self._get_all_tools_paginated(
+                tag_ids, allowed_tool_ids
+            )
 
             # Convert enabled tools to MCP format
             mcp_tools = self._convert_tools_to_mcp_format(all_tools)
@@ -68,13 +76,20 @@ class MCPService:
             logger.error(f"Error getting enabled tools: {e}")
             return []
 
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
+    async def call_tool(
+        self,
+        name: str,
+        arguments: Dict[str, Any],
+        allowed_tool_ids: Optional[List[int]] = None,
+    ) -> List[types.TextContent]:
         """
         Execute a tool by name with given arguments.
 
         Args:
             name: Tool name to execute
             arguments: Tool execution arguments
+            allowed_tool_ids: Token scope. ``None`` means no restriction; the
+                tool is rejected unless its ID is in this list otherwise.
 
         Returns:
             List of TextContent with execution results
@@ -84,6 +99,14 @@ class MCPService:
             tool = await self._tool_service.get_tool_by_name(name)
             if not tool:
                 return [self._create_error_response(f"Tool '{name}' not found")]
+
+            # Enforce token scope: deny tools not authorized for this token.
+            if allowed_tool_ids is not None and tool.id not in allowed_tool_ids:
+                return [
+                    self._create_error_response(
+                        f"Tool '{name}' is not authorized for this token"
+                    )
+                ]
 
             if not tool.is_enabled:
                 return [self._create_error_response(f"Tool '{name}' is disabled")]
@@ -134,12 +157,17 @@ class MCPService:
             logger.warning(f"Tag not found: {tag_filter}")
             return None
 
-    async def _get_all_tools_paginated(self, tag_ids: Optional[List[int]]) -> List:
+    async def _get_all_tools_paginated(
+        self,
+        tag_ids: Optional[List[int]],
+        tool_ids: Optional[List[int]] = None,
+    ) -> List:
         """
         Get all tools using pagination to handle large datasets.
 
         Args:
             tag_ids: Optional list of tag IDs to filter by
+            tool_ids: Optional token scope of allowed tool IDs
 
         Returns:
             List of all tools from database
@@ -151,7 +179,8 @@ class MCPService:
             tools, total = await self._tool_service.query_tools(
                 page=page,
                 size=100,
-                tag_ids=tag_ids
+                tag_ids=tag_ids,
+                tool_ids=tool_ids,
             )
 
             if not tools:
