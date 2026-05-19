@@ -326,7 +326,7 @@ async def debug_tool(
 
     try:
         result, logs = await service.execute_tool(
-            tool_id, debug_data.parameters, call_type="debug", headers=debug_data.headers
+            tool_id, debug_data.parameters, call_type="debug", request_headers=debug_data.headers
         )
         return Response(
             data=ToolDebugResponse(

@@ -88,21 +88,23 @@ class MCPService:
             if not tool.is_enabled:
                 return [self._create_error_response(f"Tool '{name}' is disabled")]
 
-            # Get headers from request context if available
-            headers = {}
+            # Get incoming request headers from the request context if available.
+            # These are used only as the data source for ${header["xxx"]}
+            # substitution in HTTP tool header settings; they are never exposed
+            # to tool code.
+            request_headers = {}
             try:
-                # Access the request context to get HTTP headers
                 from mcp.server.lowlevel.server import request_ctx
                 ctx = request_ctx.get()
                 if ctx and ctx.request and hasattr(ctx.request, 'headers'):
-                    headers = dict(ctx.request.headers)
+                    request_headers = dict(ctx.request.headers)
             except Exception:
                 # If we can't get headers, continue without them
                 pass
 
-            # Execute tool with headers
+            # Execute tool
             result, logs = await self._tool_service.execute_tool(
-                tool.id, arguments, call_type="mcp", headers=headers
+                tool.id, arguments, call_type="mcp", request_headers=request_headers
             )
 
             # Format and return result

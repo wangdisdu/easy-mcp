@@ -48,11 +48,12 @@
             </a-select>
           </a-form-item>
 
-          <a-form-item 
-            label="请求Header" 
+          <a-form-item
+            label="请求Header"
             :label-col="{ span: 24 }"
             :wrapper-col="{ span: 24 }"
             class="header-form-item"
+            extra='Value 可填静态值，也可用 ${header["xxx"]} 引用 MCP 客户端请求头（名称不区分大小写）；引用的请求头不存在时替换为空字符串。'
           >
             <div class="header-row">
               <a-button type="primary" size="small" @click="addHeader">
@@ -78,7 +79,7 @@
                   <a-input
                     :default-value="record.value"
                     @blur="(e) => handleHeaderChange(index, 'value', e.target.value)"
-                    placeholder="请输入Header Value"
+                    placeholder='静态值或 ${header["xxx"]}'
                   />
                 </template>
                 <template v-if="column.key === 'action'">
@@ -89,18 +90,6 @@
                 </template>
               </template>
             </a-table>
-          </a-form-item>
-
-          <a-form-item
-            label="透传请求头（白名单）"
-            extra="这里设置的请求头会透传给Http API调用的Header"
-          >
-            <a-select
-              v-model:value="formState.setting.request_header_keys"
-              mode="tags"
-              placeholder="请输入透传的 Header Key，如 Authorization、X-Tenant-Id"
-              :token-separators="[',']"
-            />
           </a-form-item>
         </template>
 
@@ -252,8 +241,7 @@ const formState = reactive({
   setting: toolType.value === 'http' ? {
     url: '',
     method: 'POST',
-    headers: [{key: "Content-Type", value: "application/json"}],
-    request_header_keys: []
+    headers: [{key: "Content-Type", value: "application/json"}]
   } : toolType.value === 'database' ? {
     url: '',
     username: '',
@@ -415,16 +403,6 @@ const fetchToolData = async () => {
         if (formState.setting.headers && !Array.isArray(formState.setting.headers)) {
           formState.setting.headers = []
         }
-        // 确保 request_header_keys 是数组格式
-        if (
-          formState.setting.request_header_keys &&
-          !Array.isArray(formState.setting.request_header_keys)
-        ) {
-          formState.setting.request_header_keys = []
-        }
-        if (!formState.setting.request_header_keys) {
-          formState.setting.request_header_keys = []
-        }
 
         // Load relationships
         fetchToolFunctions()
@@ -518,10 +496,7 @@ const prepareData = () => {
       headers: formState.setting.headers.map(header => ({
         key: header.key,
         value: header.value
-      })),
-      request_header_keys: (formState.setting.request_header_keys || [])
-        .map(key => String(key).trim())
-        .filter(key => key)
+      }))
     } : formState.type === 'database' ? {
       url: formState.setting.url,
       username: formState.setting.username,

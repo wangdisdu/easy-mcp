@@ -54,8 +54,28 @@ https://restapi.amap.com/v3/weather/weatherInfo?city={city}&key={key}&extensions
   - `application/x-www-form-urlencoded`: 表单数据
   - `multipart/form-data`: 文件上传
 - **Authorization**: 身份认证
-  - `Bearer {token}`: JWT Token
-  - `Basic {credentials}`: 基础认证
+  - `Bearer xxx`: JWT Token
+  - `Basic xxx`: 基础认证
+
+#### 引用 MCP 客户端请求头
+
+请求头的 **Value** 既可以填写静态值，也可以使用 `${header["xxx"]}` 语法引用调用方（MCP 客户端）发起请求时携带的 HTTP 请求头，由系统在工具执行前完成替换。这样无需把敏感信息写死在工具配置里，即可把调用方的认证信息透传到下游 API。
+
+- **语法**: `${header["请求头名称"]}`，也支持单引号 `${header['请求头名称']}`
+- **大小写**: 请求头名称不区分大小写，例如 `${header["Authorization"]}` 与 `${header["authorization"]}` 等价
+- **缺失处理**: 若调用方请求中不存在该请求头，占位符会被替换为**空字符串**（该请求头仍会发出，只是值为空）
+- **混合使用**: 可与静态文本组合，例如 `Bearer ${header["x-token"]}`
+- **作用范围**: 该语法仅在 HTTP 工具的请求头 Value 中生效，引用来源仅限调用方的请求头
+
+配置示例：
+
+| Key | Value | 说明 |
+| --- | --- | --- |
+| `Content-Type` | `application/json` | 静态值 |
+| `Authorization` | `${header["authorization"]}` | 透传调用方的 Authorization 请求头 |
+| `X-Tenant-Id` | `${header["x-tenant-id"]}` | 透传调用方的租户标识 |
+
+> 提示：调试工具时，可在调试界面的「请求头」中手动填入模拟值，用于验证 `${header["xxx"]}` 的替换效果。
 
 ### 步骤3: 定义参数
 
@@ -65,7 +85,9 @@ https://restapi.amap.com/v3/weather/weatherInfo?city={city}&key={key}&extensions
 
 - **url**: URL 路径参数，用于替换 URL 中的 `{paramName}`，将变量占位符替换为参数值
 - **body**: 请求体参数，用于 POST/PUT 请求
-- **header**: 请求头参数，用于动态设置请求中的`{paramName}`，将变量占位符替换为参数值
+- **header**: 请求头参数，用于动态设置请求头中的 `{paramName}`，将变量占位符替换为**工具参数值**
+
+> 注意区分两种占位符：`{paramName}` 替换为**工具参数**值（由 LLM 推理传入）；`${header["xxx"]}` 替换为**调用方请求头**值（详见上文「引用 MCP 客户端请求头」）。
 
 #### 参数定义示例
 ```json

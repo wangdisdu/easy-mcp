@@ -210,7 +210,8 @@ class ToolDebugRequest(BaseModel):
 
     Attributes:
         parameters: Tool parameters
-        headers: Tool(Http) headers
+        headers: Simulated request headers, used only to resolve
+            ${header["xxx"]} references in HTTP tool header settings
     """
 
     parameters: Dict[str, Any] = Field(
@@ -218,7 +219,8 @@ class ToolDebugRequest(BaseModel):
     )
 
     headers: Dict[str, Any] = Field(
-        default_factory=dict, description="Tool(Http) headers"
+        default_factory=dict,
+        description='Simulated request headers for resolving ${header["xxx"]} in HTTP tool headers',
     )
 
 

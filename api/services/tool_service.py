@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import os
+import re
 import traceback
 from contextlib import redirect_stdout, redirect_stderr
 from typing import Optional, List, Tuple, Dict, Any
@@ -47,10 +48,15 @@ from api.constants import ToolType
 logger = logging.getLogger(__name__)
 
 
-def _merge_http_tool_headers(
+# Matches ${header["xxx"]} or ${header['xxx']} with optional surrounding spaces.
+_HEADER_VAR_PATTERN = re.compile(
+    r"""\$\{\s*header\s*\[\s*(['"])(.*?)\1\s*\]\s*\}"""
+)
+
+
+def _resolve_http_tool_headers(
     setting_headers: Any,
     request_headers: Optional[Dict[str, Any]],
-    request_header_keys: Optional[List[str]] = None,
 ) -> List[Dict[str, str]]:
     """
     Build HTTP tool headers as a list of {"key", "value"} for user code (e.g. easy_http_call).
@@ -58,41 +64,40 @@ def _merge_http_tool_headers(
     setting_headers may be a list like [{"key": "Content-Type", "value": "application/json"}]
     or a legacy dict.
 
-    request_headers comes from the API as a dict. Only keys declared in
-    request_header_keys are allowed to override/add HTTP headers. If request_header_keys
-    is empty/None, request headers will NOT override any tool default headers.
+    Each header value may reference an incoming request header using the
+    ``${header["xxx"]}`` (or single-quoted) syntax. Static values pass through
+    unchanged. Lookup is case-insensitive. If the referenced header is absent
+    from the request, the placeholder is replaced with an empty string.
+
+    request_headers is used only as the substitution data source; it is never
+    exposed to tool code.
     """
-    merged: List[Dict[str, str]] = []
+    # Normalize request headers to a case-insensitive lookup.
+    lookup: Dict[str, str] = {}
+    if request_headers:
+        for k, v in request_headers.items():
+            lookup[str(k).lower()] = "" if v is None else str(v)
+
+    def _substitute(value: str) -> str:
+        return _HEADER_VAR_PATTERN.sub(
+            lambda m: lookup.get(m.group(2).lower(), ""), value
+        )
+
+    resolved: List[Dict[str, str]] = []
     if isinstance(setting_headers, list):
         for item in setting_headers:
             if isinstance(item, dict) and "key" in item and "value" in item:
-                merged.append(
-                    {"key": str(item["key"]), "value": str(item["value"])}
+                resolved.append(
+                    {
+                        "key": str(item["key"]),
+                        "value": _substitute(str(item["value"])),
+                    }
                 )
     elif isinstance(setting_headers, dict):
         for k, v in setting_headers.items():
-            merged.append({"key": str(k), "value": str(v)})
+            resolved.append({"key": str(k), "value": _substitute(str(v))})
 
-    if not request_headers:
-        return merged
-
-    allowed_keys = set()
-    if request_header_keys:
-        allowed_keys = {str(k).lower() for k in request_header_keys if k is not None}
-    if not allowed_keys:
-        return merged
-
-    index_by_key = {h["key"]: i for i, h in enumerate(merged)}
-    for req_key, req_val in request_headers.items():
-        rk = str(req_key)
-        if rk.lower() not in allowed_keys:
-            continue
-        if rk in index_by_key:
-            merged[index_by_key[rk]]["value"] = str(req_val)
-        else:
-            merged.append({"key": rk, "value": str(req_val)})
-            index_by_key[rk] = len(merged) - 1
-    return merged
+    return resolved
 
 
 class ToolService:
@@ -803,7 +808,7 @@ class ToolService:
         return configs
 
     async def execute_tool(
-        self, tool_id: int, parameters: Dict[str, Any], call_type: str = "mcp", headers: Optional[Dict[str, Any]] = None
+        self, tool_id: int, parameters: Dict[str, Any], call_type: str = "mcp", request_headers: Optional[Dict[str, Any]] = None
     ) -> Tuple[Any, List[str]]:
         """
         Execute a tool with the given parameters.
@@ -812,7 +817,9 @@ class ToolService:
             tool_id: Tool ID
             parameters: Tool parameters
             call_type: Call type (mcp, debug)
-            headers: Tool(HTTP) headers from the request
+            request_headers: Incoming request headers, used only as the data
+                source for ${header["xxx"]} substitution in HTTP tool header
+                settings. Never exposed to tool code.
 
         Returns:
             Tuple[Any, List[str]]: Execution result and logs
@@ -880,18 +887,15 @@ class ToolService:
                             continue
                 namespace["config"] = config_var
 
-            # Add headers to namespace
-            namespace["headers"] = headers if headers else {}
-
             setting = json.loads(tool.setting)
-            # For HTTP tools, add url and headers from setting
+            # For HTTP tools, resolve headers from setting, substituting any
+            # ${header["xxx"]} references with incoming request header values.
             if tool.type == "http" and setting:
                 namespace["url"] = setting["url"]
                 namespace["method"] = setting["method"]
-                namespace["headers"] = _merge_http_tool_headers(
+                namespace["headers"] = _resolve_http_tool_headers(
                     setting.get("headers"),
-                    headers,
-                    setting.get("request_header_keys"),
+                    request_headers,
                 )
 
             if tool.type == "database" and setting:
